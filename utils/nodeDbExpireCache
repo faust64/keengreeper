@@ -44,7 +44,7 @@ if test "$expire" -ge 0 >/dev/null 2>&1; then
 	done
 else
     echo "CRITICAL: invalid expiry date, check CACHETTL definition" >&2
-    exit 1
+    exit 2
 fi
 
 exit 0
