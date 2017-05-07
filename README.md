@@ -104,6 +104,11 @@ refreshing npmjs local cache
 processing peerio-server
 skipping peerio-server::basho-riak-client - dependency registered to exclude file
 skipping peerio-server::sinon - dependency registered to exclude file
+processing desktop-update-proxy
+staging q@desktop-update-proxy 1.4.1 -> 1.5.0
+building staged changes for desktop-update-proxy
+[chaos-q1.5.0 5c6edf6] chore(package): bump q to 1.5.0
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 done
 ```
 
