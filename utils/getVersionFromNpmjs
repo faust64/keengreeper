@@ -20,6 +20,7 @@ elif ! test -s $TMPFILE; then
     exit 2
 elif ! grep ' is the latest$' $TMPFILE >/dev/null; then
     echo "CRITICAL: failed matching last version for $1 on npmjs.com" >&2
+    rm -f $TMPFILE
     exit 3
 fi
 
