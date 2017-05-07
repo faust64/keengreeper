@@ -15,6 +15,7 @@ elif ! test -d $DBDIR; then
     exit 1
 elif ! test -e "$DBDIR/npmjs-cache"; then
     echo "WARNING: npmjs-cache is absent" >&2
+    exit 2
 fi
 
 if test "$1"; then
@@ -46,15 +47,15 @@ do
 			( sleep 2 ; nodeDbAddCache $name >/dev/null 2>&1 & )
 		    fi
 		    echo $vers
+		    if $QUICK; then
+			exit 0
+		    fi
 		fi
 	    else
 		echo "<get$ CRITICAL: failed matching $TARGET in local cache" >&2
-		if $QUICK; then
-		    exit 2
-		fi
 	    fi
 	    if $QUICK; then
-		exit 0
+		exit 2
 	    fi
 	elif test "$TARGET" = _q -o "$TARGET" = _quit; then
 	    exit 0
@@ -62,7 +63,7 @@ do
 	    echo "<get$ WARNING: malformatted NodeJS module name $TARGET"
 	fi
     fi
-    echo "<get$ type in a NodeJS name, or either _q to _quit"
+    echo "<get$ type in a NodeJS module name, or either _q or _quit to exit"
     echo -n "get$> "
     read TARGET
 done

@@ -62,7 +62,7 @@ do
 	    fi
 	fi
     fi
-    echo "<del$ type in a repository name, or either q to quit"
+    echo "<del$ type in a repository name, or either q or quit to exit"
     echo -n "del$> "
     read TARGET
 done

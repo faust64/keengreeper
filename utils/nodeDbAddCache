@@ -71,7 +71,7 @@ do
 	    fi
 	fi
     fi
-    echo "<add$ type in a NodeJS name, or either _q to _quit"
+    echo "<add$ type in a NodeJS module name, or either _q or _quit to exit"
     echo -n "add$> "
     read TARGET
 done

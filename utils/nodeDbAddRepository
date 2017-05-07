@@ -84,7 +84,7 @@ do
 	    echo "<add$ malformatted URL $TARGET"
 	fi
     fi
-    echo "<add$ type in a git URL, or either q to quit"
+    echo "<add$ type in a git URL, or either q or quit to exit"
     echo -n "add$> "
     read TARGET
 done

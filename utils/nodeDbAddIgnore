@@ -48,7 +48,7 @@ do
     else
 	echo "<add$ WARNING: malformatted NodeJS module name $TARGET"
     fi
-    echo "<add$ type in a NodeJS name, or either q to quit"
+    echo "<add$ type in a NodeJS name, or either q or quit to exit"
     echo -n "add$> "
     read TARGET
 done
