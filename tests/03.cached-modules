@@ -15,7 +15,7 @@ logTest we can purge our cache
 nodeDbDelCache
 logExpect $? 0 npmjs cache cleared
 
-logTest we can not list repositories with an empty database
+logTest we can not list cached modules with an empty database
 nodeDbListCache
 logExpect $? 1 listCache with no database
 
@@ -37,7 +37,7 @@ logExpect $? 0 npmjs local cache consistent
 
 logTest we can iterate on module checking for expired data
 nodeDbExpireCache
-logExpect $? 0 eventually updating local npmjs cache
+logExpect $? 0 dropping outdated records from local cache
 
 logTest we can lookup a nodejs dependency version from our local cache
 nodeDbGetCache express
