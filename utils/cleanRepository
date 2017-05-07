@@ -1,0 +1,36 @@
+#!/bin/sh
+
+if test -z "$1"; then
+    echo "CRITICAL: missing repository argument" >&2
+    exit 1
+elif test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $WORKDIR/$1/.git; then
+    echo "CRITICAL: repository $1 does not exist in $WORKDIR" >&2
+    exit 1
+fi
+
+cd $WORKDIR/$1
+
+# drop un-tracked files
+git ls-files --others --exclude-standard | while read line
+    do
+	rm -f "$line"
+    done
+
+git status | awk '/modified:/{print $2}' | while read line
+    do
+	rm -f "$line"
+	git checkout -- "$line"
+    done
+git status | awk '/deleted:/{print $2}' | while read line
+    do
+	git checkout -- "$line"
+    done
+
+if git status | grep 'nothing to commit, working directory clean' >/dev/null; then
+    exit 0
+fi
+
+exit 1

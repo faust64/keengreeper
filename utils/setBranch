@@ -1,0 +1,40 @@
+#!/bin/sh
+
+if test -z "$1"; then
+    echo "CRITICAL: missing repository argument" >&2
+    exit 1
+elif test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif test -z "$2"; then
+    echo "WARNING: branch undefined, assuming default working branch" >&2
+    TARGET=staging
+else
+    TARGET=$2
+fi
+
+if ! test -d $WORKDIR/$1/.git; then
+    echo "CRITICAL: repository $1 does not exist in $WORKDIR" >&2
+    exit 1
+fi
+
+cd $WORKDIR/$1
+
+if git branch | grep " $TARGET$" >/dev/null; then
+    if ! git checkout $TARGET >/dev/null 2>&1; then
+	echo "CRITICAL: Failed switching $1 to branch $TARGET" >&2
+	exit 2
+    fi
+elif test "$TARGET" = staging; then
+    if ! git branch | grep " master$" >/dev/null; then
+	echo "CRITICAL: Unable to switch $1 to branch $TARGET" >&2
+	exit 2
+    elif ! git checkout master >/dev/null 2>&1; then
+	echo "CRITICAL: Failed switching $1 to branch $TARGET" >&2
+	exit 2
+    fi
+else
+    echo "CRITICAL: branch $TARGET does not exist in $1" >&2
+fi
+
+exit 0

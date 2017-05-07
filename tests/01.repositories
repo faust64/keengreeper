@@ -1,0 +1,46 @@
+#!/bin/sh
+
+SUITE=Repositories
+for d in tests .; do test -s $d/head && . $d/head && break; done
+
+logTest we can not list repositories with an empty database
+listRepository
+logExpect $? 1 listRepository with no database
+
+logTest we can add a public repository to our database
+nodeDbAddRepository faust64/PKIdistributor
+logExpect $? 0 nodeDbAddRepository to database
+
+logTest we can list repositories finding back what we added
+listRepository | grep PKIdistributor
+logExpect $? 0 listRepository with a database
+
+logTest we can add another repository
+nodeDbAddRepository PeerioTechnologies/peerio-linux-repository
+logExpect $? 0 nodeDbAddRepository to database
+
+logTest we can find a working copy of the previously cloned repository
+test -d $WORKDIR/peerio-linux-repository
+logExpect $? 0 nodeDbAddRepository to working directory
+
+logTest we can not re-add a repository with matching name
+nodeDbAddRepository cthulhu/peerio-linux-repository
+logExpect $? 2 nodeDbAddrepository does not overwrite
+
+logTest repositories without package.json are not listed
+listRepository | grep peerio-linux-repository
+logExpect $? 1 listRepository shows non-NodeJS repositories
+
+logTest we can drop one of our repositories
+nodeDbDelRepository PeerioTechnologies/peerio-linux-repository
+logExpect $? 0 nodeDbDelRepository from database
+
+logTest we did actually drop repository from working directory
+test -d $WORKDIR/peerio-linux-repository
+logExpect $? 1 nodeDbDelRepository from working directory
+
+logTest we can not drop a non-existent repository
+nodeDbDelRepository coon-and-friends
+logExpect $? 2 nodeDbDelRepository with invalid input
+
+logDone

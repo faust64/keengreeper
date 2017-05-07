@@ -1,0 +1,148 @@
+#!/bin/sh
+
+fromFile=false
+if test -z "$1"; then
+    echo "CRITICAL: missing repository argument" >&2
+    exit 1
+elif test -f "$2" -a -z "$3"; then
+    fromFile=true
+    if test `awk 'END{print NR}' $2` -eq 1; then
+	read dep loc rem <$2
+	commitMsg="chore(package): bump $dep to $rem"
+	DSTBRANCH=chaos-$dep$rem
+    else
+	commitMsg="chore(package): bump"
+	while read module oldVersion newVersion
+	do
+	    subject="$subject-$module$newVersion"
+	    commitMsg="$commitMsg $module to $newVersion,"
+	done <$2
+	commitMsg=`echo "$commitMsg" | sed 's|,$||'`
+	DSTBRANCH=chaos$subject
+    fi
+else
+    if test -z "$2"; then
+	echo "CRITICAL: missing dependency argument" >&2
+	exit 1
+    elif test -z "$3"; then
+	echo "CRITICAL: missing old revision argument" >&2
+	exit 1
+    elif test -z "$4"; then
+	echo "CRITICAL: missing new revision argument" >&2
+	exit 1
+    fi
+    commitMsg="chore(package): bump $2 to $4"
+    DSTBRANCH=chaos-$2$4
+fi
+if test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $WORKDIR/$1/.git; then
+    echo "CRITICAL: repository $1 does not exist in $WORKDIR" >&2
+    exit 1
+elif ! test -s $WORKDIR/$1/package.json; then
+    echo "CRITICAL: repository $1 has no package.json" >&2
+    exit 1
+fi
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+if test -z "$TMPDIR"; then
+    TMPDIR=/tmp
+fi
+if test -z "$LOGDIR"; then
+    LOGDIR=./logs
+fi
+rm -fr $TMPDIR/$1
+if ! cp -rp $WORKDIR/$1 $TMPDIR/; then
+    echo "CRITICAL: failed initializing working directory" >&2
+    exit 2
+fi
+
+cd $TMPDIR/$1
+
+if git branch | grep $DSTBRANCH >/dev/null; then
+    echo "NOTICE: a branch $DSTBRANCH already exists in $1" >&2
+    exit 0
+elif ! git branch $DSTBRANCH >/dev/null; then
+    echo "CRITICAL: failed creating branch $DSTBRANCH in $1" >&2
+    exit 3
+elif ! git checkout $DSTBRANCH >/dev/null 2>&1; then
+    echo "CRITICAL: failed checkout out to $DSTBRANCH in $1" >&2
+    exit 4
+fi
+
+if $fromFile; then
+    while read depName oldVersion newVersion
+    do
+	if ! sed -i "s|\"$depName\": \"$oldVersion\"|\"$depName\": \"$newVersion\"|" package.json >/dev/null; then
+	    echo "CRITICAL: failed updating $depName from $oldVersion to $newVersion in $1's package.json" >&2
+	    exit 5
+	fi
+    done <$2
+elif ! sed -i "s|\"$2\": \"$3\"|\"$2\": \"$4\"|" package.json >/dev/null; then
+    echo "CRITICAL: failed updating $2 from $3 to $4 in $1's package.json" >&2
+    exit 5
+fi
+
+DO_SHRINKWRAP=false
+if test -d node_shrinkwrap; then
+    rm -fr npm-shrinkwrap.json node_modules node_shrinkwrap
+    DO_SHRINKWRAP=true
+fi
+
+engine=`nodeGetEngine ./package.json`
+if ! nvmGetEngine $engine >/dev/null 2>&1; then
+    if ! nvmInstallEngine $engine >/dev/null 2>&1; then
+	echo "CRITICAL: failed installing node $engine" >&2
+	exit 6
+    fi
+fi
+runningEngine=`node --version 2>/dev/null`
+if ! test "v$engine" = "$runningEngine"; then
+    if ! nvmSetEngine $engine >/dev/null 2>&1; then
+	echo "CRITICAL: failed switching node to $engine" >&2
+	exit 6
+    fi
+fi
+
+if ! npm install >$LOGDIR/$1-$DSTBRANCH-npminstall.log 2>&1; then
+    echo "CRITICAL: failed installing $1 dependencies in $DSTBRANCH" >&2
+    exit 7
+fi
+if $DO_SHRINKWRAP; then
+    if ! npm shrinkwrap --dev >$LOGDIR/$1-$DSTBRANCH-shrinkwrap.log 2>&1; then
+	echo "CRITICAL: failed shrinkwrapping $1 dependencies in $DSTBRANCH" >&2
+	exit 8
+    elif ! shrinkpack -c >$LOGDIR/$1-$DSTBRANCH-shrinkpack.log 2>&1; then
+	if ! shrinkpack >$LOGDIR/$1-$DSTBRANCH-shrinkpack.log 2>&1; then
+	    echo "CRITICAL: failed shrinkpacking $1 dependencies in $DSTBRANCH" >&2
+	    exit 9
+	fi
+    fi
+    git status | awk '/modified:.*node_shrinkwrap\//{print $2}' | while read file
+	do
+	    git checkout -- $file
+	done
+    git status | awk '/deleted:/{print $2}' | while read file
+	do
+	    git rm $file
+	done
+    if ! git add package.json npm-shrinkwrap.json node_shrinkwrap >/dev/null 2>&1; then
+	echo "CRITICAL: failed staging changes to $1 in $DSTBRANCH" >&2
+	exit 10
+    fi
+elif ! git add package.json >/dev/null 2>&1; then
+    echo "CRITICAL: failed staging changes to $1 in $DSTBRANCH" >&2
+    exit 10
+fi
+npmClearCache
+if ! git commit -m "$commitMsg"; then
+    echo "CRITICAL: failed committing changes to $1 in $DSTBRANCH" >&2
+    exit 11
+elif ! git push -u origin $DSTBRANCH >/dev/null 2>&1; then
+    echo "CRITICAL: failed pushing changes to $1 in $DSTBRANCH" >&2
+    exit 11
+fi
+
+exit 0

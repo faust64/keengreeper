@@ -1,0 +1,37 @@
+#!/bin/sh
+echo "DEBUG: WOULD HAVE RESET $1" >&2
+exit 0
+
+if test -z "$1"; then
+    echo "CRITICAL: missing repository argument" >&2
+    exit 1
+elif test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $WORKDIR/$1/.git; then
+    echo "CRITICAL: repository $1 does not exist in $WORKDIR" >&2
+    exit 1
+fi
+
+cd $WORKDIR/$1
+ORIGIN=`git remote -v | awk '/^origin/{print $2;exit;}'`
+if test -z "$ORIGIN"; then
+    echo "CRITICAL: failed parsing origin resetting $1" >&2
+    exit 2
+fi
+cd ..
+if test -d $1.orig; then
+    rm -fr $1.orig
+fi
+mv $1 $1.orig
+if ! git clone $ORIGIN; then
+    echo "CRITICAL: failed cloning $ORIGIN resetting $1" >&2
+    mv $1.orig $1
+    exit 3
+elif ! test -d $1; then
+    echo "CRITICAL: cloning $ORIGIN did not create a replacement repository for $1" >&2
+    mv $1.orig $1
+    exit 3
+fi
+
+exit 0

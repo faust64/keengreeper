@@ -1,0 +1,50 @@
+#!/bin/sh
+
+SUITE="Versions"
+for d in tests .; do test -s $d/head && . $d/head && break; done
+
+logTest comparing versions works
+checkVersion 1.2.3 1.2.3
+logExpect $? 0 versions are equals
+
+logTest comparing versions works
+checkVersion 1.2.3 1.3.3
+logExpect $? 2 versions differ
+
+logTest comparing versions works
+checkVersion 1.2.x 1.2.3
+logExpect $? 0 versions are equals
+
+logTest comparing versions works
+checkVersion ~1.2.2 1.2.3
+logExpect $? 0 versions are equals
+
+logTest comparing versions works
+checkVersion ~1.2.2 1.3.3
+logExpect $? 2 versions differ
+
+logTest comparing versions works
+checkVersion ^1.2.2 1.2.3
+logExpect $? 0 versions are equals
+
+logTest comparing versions works
+checkVersion ^1.2.2 1.3.3
+logExpect $? 0 versions are equals
+
+logTest comparing versions works
+checkVersion ^1.2.2 2.2.3
+logExpect $? 2 versions differ
+
+logTest comparing versions works
+checkVersion 1.x 1.2.3
+logExpect $? 0 version are equals
+
+logTest comparing versions works
+checkVersion 1.x 2.3.0
+logExpect $? 2 versions differ
+
+logTest comparing versions works
+checkVersion 1.X 1.2.3
+logExpect $? 0 version are equals
+
+logDone

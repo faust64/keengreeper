@@ -1,0 +1,36 @@
+#!/bin/sh
+
+if test -z "$1"; then
+    echo "CRITICAL: missing dependency to check" >&2
+    exit 1
+fi
+
+if test -z "$TMPDIR"; then
+    TMPDIR=/tmp
+fi
+TMPFILE=$TMPDIR/$1.$$
+
+if ! wget https://www.npmjs.com/package/$1 -q -O $TMPFILE; then
+    echo "CRITICAL: failed fetching $1 data from npmjs.com" >&2
+    rm -f $TMPFILE
+    exit 2
+elif ! test -s $TMPFILE; then
+    echo "CRITICAL: null-sized file fetching $1 data from npmjs.com" >&2
+    rm -f $TMPFILE
+    exit 2
+elif ! grep ' is the latest$' $TMPFILE >/dev/null; then
+    echo "CRITICAL: failed matching last version for $1 on npmjs.com" >&2
+    exit 3
+fi
+
+VERS=`grep -B1 ' is the latest$' $TMPFILE | grep strong | sed 's|.*<strong>\(.*\)</strong>.*|\1|'`
+rm -f $TMPFILE
+
+if test -z "$VERS"; then
+    echo "CRITICAL: failed extracting last known version of $1 from npmjs.com" >&2
+    exit 4
+fi
+
+echo $VERS
+
+exit 0

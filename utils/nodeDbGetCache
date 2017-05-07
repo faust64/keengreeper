@@ -1,0 +1,70 @@
+#!/bin/sh
+
+if test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif test -z "$DBDIR"; then
+    DBDIR=$WORKDIR
+fi
+
+if ! test -d $WORKDIR; then
+    echo "CRITICAL: repository working directory does not exist" >&2
+    exit 1
+elif ! test -d $DBDIR; then
+    echo "CRITICAL: database directory does not exist" >&2
+    exit 1
+elif ! test -e "$DBDIR/npmjs-cache"; then
+    echo "WARNING: npmjs-cache is absent" >&2
+fi
+
+if test "$1"; then
+    TARGET=$1
+    QUICK=true
+else
+    QUICK=false
+fi
+if test "$CACHETTL"; then
+    TTL=$CACHETTL
+else
+    TTL=3600
+fi
+
+while :
+do
+    if test "$TARGET"; then
+	if echo "$TARGET"  | grep -E '^[^_\./][^/]*$' >/dev/null; then
+	    if grep "^$TARGET;" $DBDIR/npmjs-cache >/dev/null 2>&1; then
+		eval `grep "^$TARGET;" $DBDIR/npmjs-cache | sed 's|^\([^;]*\);\(.*\);\([0-9]*\)$|name=\1 vers=\2 checked=\3|'`
+		if ! test "$checked" -gt 0 >/dev/null; then
+		    echo "<get$ WARNING: $name record last check date invalid" >&2
+		elif ! test $TTL -ge 0 >/dev/null; then
+		    echo "<get$ WARNING: TTL ($TTL) invalid to evaluate $name consistency" >&2
+		else
+		    expire=`expr $(date +%s) - $TTL`
+		    if test $checked -lt $expire; then
+			echo "<get$ WARNING: $name record is expired, proceeding with last known data and scheduling refresh" >&2
+			( sleep 2 ; nodeDbAddCache $name >/dev/null 2>&1 & )
+		    fi
+		    echo $vers
+		fi
+	    else
+		echo "<get$ CRITICAL: failed matching $TARGET in local cache" >&2
+		if $QUICK; then
+		    exit 2
+		fi
+	    fi
+	    if $QUICK; then
+		exit 0
+	    fi
+	elif test "$TARGET" = _q -o "$TARGET" = _quit; then
+	    exit 0
+	else
+	    echo "<get$ WARNING: malformatted NodeJS module name $TARGET"
+	fi
+    fi
+    echo "<get$ type in a NodeJS name, or either _q to _quit"
+    echo -n "get$> "
+    read TARGET
+done
+
+exit 2

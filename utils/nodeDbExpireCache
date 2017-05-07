@@ -1,0 +1,50 @@
+#!/bin/sh
+
+if test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif test -z "$DBDIR"; then
+    DBDIR=$WORKDIR
+fi
+if test -z "$CACHETTL"; then
+    CACHETTL=3600
+fi
+
+if test "$CACHETTL" = 0; then
+    exit 0
+elif ! test -d $WORKDIR; then
+    echo "CRITICAL: repository working directory does not exist" >&2
+    exit 1
+elif ! test -d $DBDIR; then
+    echo "CRITICAL: database directory does not exist" >&2
+    exit 1
+elif ! test -e "$DBDIR/npmjs-cache"; then
+    echo "CRITICAL: npmjs-cache is absent" >&2
+    exit 1
+fi
+
+date=`date +%s`
+expire=`expr $date - $CACHETTL`
+if test "$expire" -ge 0 >/dev/null 2>&1; then
+    sed 's|;| |g' $DBDIR/npmjs-cache | while read name version lastCheck
+	do
+	    if test "$lastCheck" -lt $expire; then
+		if ! sed -i "s/^$name;$version;/d" $DBDIR/npmjs-cache; then
+		    if grep "^$name;" $DBDIR/npmjs-cache >/dev/null; then
+			echo "CRITICAL: failed expiring $name from npmjs-cache" >&2
+		    else
+			echo "NOTICE: expired $name from npmjs-cache"
+		    fi
+		else
+		    echo "NOTICE: expired $name from npmjs-cache"
+		fi
+	    elif test "$DEBUG"; then
+		echo "NOTICE: keeping $name"
+	    fi
+	done
+else
+    echo "CRITICAL: invalid expiry date, check CACHETTL definition" >&2
+    exit 1
+fi
+
+exit 0

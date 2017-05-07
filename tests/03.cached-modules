@@ -1,0 +1,50 @@
+#!/bin/sh
+
+SUITE="Cached Modules"
+for d in tests .; do test -s $d/head && . $d/head && break; done
+
+logTest we can cache a valid module from npmjs
+nodeDbAddCache q
+logExpect $? 0 add module to npmjs local cache
+
+logTest we can find previously added module cached
+nodeDbListCache  | grep '^q, '
+logExpect $? 0 npmjs local cache consistent
+
+logTest we can purge our cache
+nodeDbDelCache
+logExpect $? 0 npmjs cache cleared
+
+logTest we can not list repositories with an empty database
+nodeDbListCache
+logExpect $? 1 listCache with no database
+
+logTest we can cache another valid module from npmjs
+nodeDbAddCache express
+logExpect $? 0 add module to npmjs local cache
+
+logTest wen can re-cache that same module from npmjs
+nodeDbAddCache express
+logExpect $? 0 re-cache module
+
+logTest we can not cache an invalid module
+nodeDbAddCache invalid/name
+logExpect $? 2 adding invalid module to npmjs local cache
+
+logTest we can find previously added module cached
+nodeDbListCache | grep '^express, '
+logExpect $? 0 npmjs local cache consistent
+
+logTest we can iterate on module checking for expired data
+nodeDbExpireCache
+logExpect $? 0 eventually updating local npmjs cache
+
+logTest we can lookup a nodejs dependency version from our local cache
+nodeDbGetCache express
+logExpect $? 0 resolves last known version of a nodejs module
+
+logTest we get an error querying cache for an unknown module
+nodeDbGetCache plan9fromouterspace
+logExpect $? 2 can not query cache for unknown module
+
+logDone

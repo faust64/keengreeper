@@ -1,0 +1,70 @@
+#!/bin/sh
+
+if test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif test -z "$DBDIR"; then
+    DBDIR=$WORKDIR
+fi
+
+if ! test -d $WORKDIR; then
+    echo "CRITICAL: repository working directory does not exist" >&2
+    exit 1
+elif ! test -d $DBDIR; then
+    echo "CRITICAL: database directory does not exist" >&2
+    exit 1
+elif ! test -e "$DBDIR/nodejs-update-db"; then
+    echo "CRITICAL: nodejs-update-db absent" >&2
+    exit 1
+fi
+
+if test "$1"; then
+    TARGET=$1
+    QUICK=true
+else
+    QUICK=false
+fi
+
+while :
+do
+    if test "$TARGET"; then
+	if test "$TARGET" = q -o "$TARGET" = quit; then
+	    exit 0
+	elif grep -E "^$TARGET;" $DBDIR/nodejs-update-db >/dev/null; then
+	    LOCAL=`grep -E "^$TARGET;" $DBDIR/nodejs-update-db | cut -d\; -f2`
+	elif grep -E ";$TARGET;" $DBDIR/nodejs-update-db >/dev/null; then
+	    LOCAL=$TARGET
+	else
+	    LOCAL=
+	fi
+	if echo "$LOCAL" | grep -E '(^/|/\.\.)' >/dev/null; then
+	    echo "<del$ WARNING: illegal repository name $LOCAL"
+	elif echo "$LOCAL" | grep '[a-zA-Z0-9]' >/dev/null; then
+	    cd $WORKDIR
+	    if ! test -d "$LOCAL"; then
+		echo "<del$ WARNING: $TARGET does not seem to exist in $WORKDIR any more, cleaning database"
+	    else
+		rm -fr "$LOCAL"
+		if ! sed -i "/;$LOCAL;/d" $DBDIR/nodejs-update-db; then
+		    if grep ";$LOCAL;" $DBDIR/nodejs-update-db >/dev/null; then
+			echo "<del$ WARNING: failed removing $LOCAL from database"
+		    fi
+		fi
+		echo "<del$ NOTICE: removed $LOCAL"
+		if $QUICK; then
+		    exit 0
+		fi
+	    fi
+	else
+	    echo "<del$ malformatted repository name $TARGET"
+	    if $QUICK; then
+		exit 2
+	    fi
+	fi
+    fi
+    echo "<del$ type in a repository name, or either q to quit"
+    echo -n "del$> "
+    read TARGET
+done
+
+exit 2

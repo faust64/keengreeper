@@ -1,0 +1,46 @@
+#!/bin/sh
+
+SUITE="Ignored Modules"
+for d in tests .; do test -s $d/head && . $d/head && break; done
+
+logTest we can not list ignored modules from an empty database
+nodeDbListIgnore
+logExpect $? 1 listIgnore with no database
+
+logTest we can not add an invalid name to ignored modules
+nodeDbAddIgnore faust64/PKIdistributor
+logExpect $? 2 feed invalid input to ignored module to database
+
+logTest we can add an item to ignored modules
+nodeDbAddIgnore sinon
+logExpect $? 0 add ignored module to database 1/2
+
+logTest we can add another ignored module
+nodeDbAddIgnore tweetnacl
+logExpect $? 0 add ignored module to database 2/2
+
+logTest we can re-add a module to the ignore list
+nodeDbAddIgnore tweetnacl
+logExpect $? 0 re-add ignored module to database
+
+logTest we can list ignored modules and find back what we added
+nodeDbListIgnore | awk 'BEG{cpt=0}/sinon|tweetnacl/{cpt=cpt + 1}END{print cpt}' | grep '^2$' >/dev/null
+logExpect $? 0 ignored modules database is consistent
+
+logTest we can not drop an invalid item from ignored modules
+nodeDbDelIgnore leettncaw
+logExpect $? 2 drop invalid item from ignored modules
+
+logTest we can drop an item from ignored modules
+nodeDbDelIgnore tweetnacl
+logExpect $? 0 drop ignored module from database
+
+logTest we actually dropped module from ignored list
+nodeDbListIgnore | grep tweetnacl
+logExpect $? 1 ignored modules database is consistent 1/2
+
+logTest we did not drop everything from ignored modules list
+nodeDbListIgnore | grep sinon
+logExpect $? 0 ignored modules database is consistent 2/2
+
+logDone

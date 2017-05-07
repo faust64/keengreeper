@@ -1,0 +1,10 @@
+machine:
+  environment:
+    CACHETTL: 30
+test:
+  override:
+    - make test
+  pre:
+    - make reset
+  post:
+    - make reset

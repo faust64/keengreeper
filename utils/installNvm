@@ -1,0 +1,40 @@
+#!/bin/sh
+
+if test -x /usr/bin/apt; then
+    install=
+    for dep in build-essential libssl-dev
+    do
+	if ! dpkg -l | grep "^ii $dep " >/dev/null; then
+	    install="$install $dep"
+	fi
+    done
+    if test "$install"; then
+	export DEBIAN_FRONTEND=noninteractive
+	if ! apt-get update >/dev/null 2>&1; then
+	    echo "CRITICAL: failed updating apt cache" >&2
+	    exit 1
+	elif ! apt-get install -yf --force-yes $install >/dev/null 2>&1; then
+	    echo "CRITICAL: failed installing nvm dependencies" >&2
+	    exit 1
+	fi
+    fi
+elif test -s /etc/redhat-release; then
+    for dep in gcc gcc-c++
+    do
+	if ! rpm -qa | grep "$dep " >/dev/null; then
+	    install="$install $dep"
+	fi
+    done
+    if test "$install"; then
+	yum -y install $install
+    fi
+else
+    echo "WARNING: unsupported distro, NVM dependencies may be missing" >&2
+fi
+
+if ! curl https://raw.githubusercontent.com/creationix/nvm/v0.33.2/install.sh | bash; then
+    echo "CRITICAL: failed installing nvm" >&2
+    exit 2
+fi
+
+exit 0

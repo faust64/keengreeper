@@ -1,0 +1,41 @@
+#!/bin/sh
+
+if test -z "$1"; then
+    echo "CRITICAL: missing local version" >&2
+    exit 1
+elif test -z "$2"; then
+    echo "CRITICAL: missing reference version" >&2
+    exit 1
+fi
+
+eval `echo "$1" | sed 's|[~^]*\([0-9]*\)\.\([0-9xX]*\).*\(.*\)|localMaj=\1 localMin=\2 localPatch=\3|'`
+eval `echo "$2" | sed 's|\([0-9]*\)\.\([0-9]*\).\(.*\)|refMaj=\1 refMin=\2 refPatch=\3|'`
+
+if echo "$1" | grep '^^'; then
+    localMin=x
+    localPatch=x
+elif echo "$1" | grep '^~'; then
+    localPatch=x
+fi >/dev/null
+for var in localMaj localMin localPatch
+do
+    eval check=\$$var
+    if test -z "$check" -o "$check" = X; then
+	eval $var=x
+    fi
+done
+
+MATCH=false
+if test "$localMaj" = "$refMaj"; then
+    if test "$localMin" = "$refMin" -o "$localMin" = x; then
+	if test "$localPatch" = "$refPatch" -o "$localPatch" = x; then
+	    MATCH=true
+	fi
+    fi
+fi
+
+if $MATCH; then
+    exit 0
+fi
+
+exit 2

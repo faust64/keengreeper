@@ -1,0 +1,34 @@
+#!/bin/sh
+
+if test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif test -z "$DBDIR"; then
+    DBDIR=$WORKDIR
+fi
+
+if ! test -d $WORKDIR; then
+    echo "CRITICAL: repository working directory does not exist" >&2
+    exit 1
+elif ! test -d $DBDIR; then
+    echo "CRITICAL: database directory does not exist" >&2
+    exit 1
+elif ! test -e "$DBDIR/nodejs-update-db"; then
+    echo "CRITICAL: nodejs-update-db absent" >&2
+    exit 1
+elif test "$1" = -a -o "$1" = --all; then
+    HIDDEN=true
+else
+    HIDDEN=false
+fi
+
+sed 's|;| |g' $DBDIR/nodejs-update-db | while read url name lastCheck
+    do
+	if test -s "$WORKDIR/$name/package.json"; then
+	    echo $name
+	elif $HIDDEN; then
+	    echo "$name (no package.json)"
+	fi
+    done | grep -E '.*'
+
+exit $?

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+if test -z "$1"; then
+    echo "CRITICAL: missing version" >&2
+    exit 1
+fi
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+if test "$1" = lts; then
+    nvm install --lts
+    ret=$?
+else
+    nvm install $1
+    ret=$?
+fi
+
+exit $ret

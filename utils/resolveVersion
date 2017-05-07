@@ -1,0 +1,26 @@
+#!/bin/sh
+
+if test -z "$1"; then
+    echo "CRITICAL: missing repository argument" >&2
+    exit 1
+elif test -z "$2"; then
+    echo "CRITICAL: missing dependency argument" >&2
+    exit 1
+elif test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $WORKDIR/$1/.git; then
+    echo "CRITICAL: repository $1 does not exist in $WORKDIR" >&2
+    exit 1
+elif ! test -d $WORKDIR/$1/node_shrinkwrap; then
+    echo "CRITICAL: repository $1 has no shrinkwrapped dependencies" >&2
+    exit 1
+fi
+
+find $WORKDIR/$1/node_shrinkwrap -name "$2-[0-9]*.tgz" | sed "s|.*$2-\(.*\)\.tgz|\1|" | sort -nr | while read version
+    do
+	echo $version
+	exit 0
+    done
+
+exit 2

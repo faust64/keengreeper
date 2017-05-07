@@ -1,0 +1,17 @@
+#!/bin/sh
+
+if test -z "$TMPDIR"; then
+    TMPDIR=/tmp
+fi
+
+rootPath=`df $TMPDIR | awk '/^\//{print $6}'`
+if mount | grep " $rootPath " | grep noexec >/dev/null; then
+    cat <<EOF
+CRITICAL: installing NodeJS modules, it is likely you will want your TMPDIR
+	referring to some partition mounted WITHOUT noexec
+	dirty fix consists in mount -o remount,rw $rootPath
+EOF
+    exit 1
+fi
+
+exit 0

@@ -1,0 +1,25 @@
+#!/bin/sh
+
+if test -z "$1"; then
+    echo "CRITICAL: missing input"
+    exit 1
+fi
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+if test "$1" = lts; then
+    if ! nvm use --lts; then
+	echo "CRITICAL: failed switching nvm engine" >&2
+	exit 2
+    fi
+elif ! nvm use "$1"; then
+    echo "CRITICAL: failed switching nvm engine" >&2
+    exit 2
+fi
+
+if ! npm install -g node-gyp node-pre-gyp shrinkpack shrinkwrap snyk yarn >/dev/null 2>&1; then
+    echo "WARNING: failed installing global dependencies"
+fi
+
+exit 0

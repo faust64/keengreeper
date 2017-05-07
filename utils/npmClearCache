@@ -1,0 +1,14 @@
+#!/bin/sh
+
+if test -z "$TMPDIR"; then
+    TMPDIR=/tmp
+fi
+
+npm cache clear >/dev/null 2>&1
+if test -d ~/.npm; then
+    rm -fr ~/.npm
+fi
+find $TMPDIR -maxdepth 1 -name 'npm-[0-9]*' -user `id -u` -exec rm -fr {} \;
+find $TMPDIR -maxdepth 1 -name '*.snyk-patch' -user `id -u` -exec rm -f {} \;
+
+exit $?

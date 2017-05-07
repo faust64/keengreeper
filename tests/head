@@ -1,0 +1,30 @@
+#!/bin/sh
+
+CPT=0
+
+logDone() {
+    echo
+    echo DONE
+}
+
+logExpect() {
+    if test "$1" != "$2"; then
+	echo "  FAIL: expecting '$1', had '$2' ($@)"
+	exit 1
+    fi
+}
+
+logTest() {
+    CPT=`expr $CPT + 1`
+    test "$CPT" -lt 10 && PFX=0 || PFX=
+    echo "#$PFX$CPT Checks $@"
+}
+
+if test "$SUITE"; then
+    cat <<EOF
+
+========================
+$SUITE test suite
+========================
+EOF
+fi

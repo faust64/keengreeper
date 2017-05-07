@@ -1,0 +1,30 @@
+#!/bin/sh
+
+if test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif test -z "$DBDIR"; then
+    DBDIR=$WORKDIR
+fi
+
+if ! test -d $DBDIR; then
+    echo "CRITICAL: database directory does not exist" >&2
+    exit 1
+elif ! test -e "$DBDIR/nodejs-update-db"; then
+    echo "CRITICAL: nodejs-update-db absent" >&2
+    exit 1
+elif test -z "$1"; then
+    echo "CRITICAL: missing repository to mark input" >&2
+    exit 1
+elif ! grep -v "^$1;" $DBDIR/nodejs-update-db >/dev/null; then
+    echo "CRITICAL: can not update unknown repository" >&2
+    exit 1
+fi
+
+date=`date +%s`
+if ! sed -i "s|^\([^;]*;$1\);[0-9]*$|\1;$date|" $DBDIR/nodejs-update-db; then
+    echo "CRITICAL: failed updating $1 last check date"
+    exit 2
+fi
+
+exit 0

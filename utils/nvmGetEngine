@@ -1,0 +1,14 @@
+#!/bin/sh
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+if test "$1"; then
+    MATCH="$1"
+else
+    MATCH='.*'
+fi
+
+nvm list node 2>&1 | grep -v system | sed 's/\x1B\[[0-9;]*[a-zA-Z]//g' | awk '{print $NF}' | grep "$MATCH"
+
+exit $?

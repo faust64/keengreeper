@@ -1,0 +1,18 @@
+#!/bin/sh
+
+if test -z "$1"; then
+    echo "CRITICAL: missing packages.json input"
+    exit 1
+elif ! test -s "$1"; then
+    echo "CRITICAL: $1 not found"
+    exit 1
+fi
+
+if cat "$1" | grep -A5 '"engines"' | awk '/"node":/{print $2}' | grep [0-9] >/dev/null; then
+    eval `cat "$1" | grep -A5 '"engines"' | awk '/"node":/{print "target="$2}'`
+    echo $target
+else
+    echo "lts"
+fi
+
+exit 0

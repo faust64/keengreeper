@@ -1,0 +1,135 @@
+#!/bin/sh
+
+basePath=`dirname $0`
+export PATH="$basePath/utils:$PATH"
+
+if test -s /etc/keengreeper.conf; then
+    . /etc/keengreeper.conf
+fi
+if test -z "$LOGDIR"; then
+    export LOGDIR=`pwd`/logs
+fi
+if test -z "$TMPDIR"; then
+    export TMPDIR=`pwd`/tmp
+fi
+if test -z "$WORKDIR"; then
+    export WORKDIR=/home/`id -un`/git
+fi
+if test -z "$DBDIR"; then
+    export DBDIR=$WORKDIR
+fi
+if test -z "$CACHETTL"; then
+    export CACHETTL=3600
+fi
+test -d $LOGDIR || mkdir -p $LOGDIR
+test -d $TMPDIR || mkdir -p $TMPDIR
+test -d $DBDIR  || mkdir -p $DBDIR
+if ! test -d $WORKDIR; then
+    echo "CRITICAL: $WORKDIR does not exist" >&2
+    exit 1
+elif ! test -d $DBDIR; then
+    echo "CRITICAL: $DBDIR does not exist" >&2
+    exit 1
+elif ! test -s $DBDIR/nodejs-update-db; then
+    cat <<EOF >&2
+CRITICAL: nodejs-update-db absent or empty
+	  use nodejs-update-cli to create an empty dataset, and configure which
+	  repositories our job should be working with.
+EOF
+    exit 1
+elif ! checkTmpdir; then
+    exit 1
+fi
+TMPFILE=$TMPDIR/$1.$$
+
+if listRepository >/dev/null 2>&1; then
+    echo "refreshing npmjs local cache"
+    nodeDbExpireCache >/dev/null 2>&1 || true
+fi
+
+for repository in `listRepository`
+do
+    if test "$1"; then
+	if ! echo $repository | grep -E "$1" >/dev/null; then
+	    test "$DEBUG" && echo "skipping $repository - does not match pattern"
+	    continue
+	fi
+    fi
+    if test -s "$TMPDIR/$repository.lock"; then
+	if ls /proc/`cat "$TMPDIR/$repository.lock"` >/dev/null 2>&1; then
+	    echo "skipping $repository - lock file exists"
+	    continue
+	fi
+	test "$DEBUG" && echo "orphan lock file exists, discarding"
+    fi
+    echo $$ >$TMPDIR/$repository.lock
+    sleep 1
+    if ! grep $$ $TMPDIR/$repository.lock >/dev/null 2>&1; then
+	echo "skipping $repository - can not acquire lock"
+	continue
+    fi
+    echo "processing $repository"
+    if ! cleanRepository $repository; then
+	resetRepository $repository
+    fi
+    if setBranch $repository staging; then
+	if ! updateRepository $repository; then
+	    echo "skipping $repositroy - failed updating local copy"
+	    rm -f $TMPDIR/$repository.lock
+	    continue
+	elif ! listDependencies $repository >/dev/null; then
+	    echo "skipping $repository - failed listing dependencies"
+	    rm -f $TMPDIR/$repository.lock
+	    continue
+	fi
+	listDependencies $repository | while read dependency version
+	    do
+		test "$DEBUG" && echo "checking $dependency on behalf of $repository"
+		skipreason=
+		if grep "^$dependency$" $DBDIR/exclude-from-updates >/dev/null 2>&1; then
+		    skipreason="dependency registered to exclude file"
+		elif echo $version | grep -E '(((http(s|)|ssh|file):)|/)' >/dev/null; then
+		    skipreason="non-npm dependency"
+		elif ! nodeDbGetCache $dependency >/dev/null 2>&1; then
+		    if ! getVersionFromNpmjs $dependency >/dev/null 2>&1; then
+			skipreason="failed getting last revision from npmjs.com"
+		    elif ! nodeDbAddCache $dependency >/dev/null 2>&1; then
+			skipreason="failed updating npmjs cache"
+		    fi
+		fi
+		if test "$skipreason"; then
+		    test "$DEBUG" && echo "skipping $repository::$dependency - $skipreason"
+		    continue
+		fi
+		lastKnown=`nodeDbGetCache $dependency 2>/dev/null`
+		if test "$version" = latest; then
+		    if resolveVersion $repository $dependency >/dev/null 2>/dev/null; then
+			localVersion=`resolveVersion $repository $dependency`
+		    else
+			continue
+		    fi
+		else
+		    localVersion=$version
+		fi
+		if checkVersion "$localVersion" "$lastKnown"; then
+		    continue
+		fi
+		echo "staging $dependency@$repository $localVersion -> $lastKnown"
+		echo $dependency $localVersion $lastKnown >>$TMPFILE
+	    done
+	if test -s $TMPFILE; then
+	    echo "building staged changes for $repository"
+	    bumpVersion $repository $TMPFILE
+	    rm -f $TMPFILE
+	fi
+	nodeDbUpdateRepository $repository >/dev/null 2>&1
+	rm -f $TMPDIR/$repository.lock
+    else
+	echo "skipping $repository - failed switching to main working branch"
+    fi
+done
+nodeClearLogs
+
+echo done
+
+exit 0

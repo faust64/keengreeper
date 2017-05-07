@@ -1,0 +1,149 @@
+#!/bin/sh
+
+basePath=`dirname $0`
+export PATH="$basePath/utils:$PATH"
+
+if test -s /etc/keengreeper.conf; then
+    . /etc/keengreeper.conf
+fi
+if test -z "$LOGDIR"; then
+    export LOGDIR=`pwd`/logs
+fi
+if test -z "$TMPDIR"; then
+    export TMPDIR=`pwd`/tmp
+fi
+if test -z "$WORKDIR"; then
+    export WORKDIR=/home/`id -un`/git
+fi
+if test -z "$DBDIR"; then
+    export DBDIR=$WORKDIR
+fi
+if test -z "$CACHETTL"; then
+    export CACHETTL=3600
+fi
+test -d $LOGDIR || mkdir -p $LOGDIR
+test -d $TMPDIR || mkdir -p $TMPDIR
+test -d $DBDIR  || mkdir -p $DBDIR
+if ! test -d $WORKDIR; then
+    echo "CRITICAL: $WORKDIR does not exist" >&2
+    exit 1
+elif ! test -d $DBDIR; then
+    echo "CRITICAL: $DBDIR does not exist" >&2
+    exit 1
+fi
+
+if ! test -e "$DBDIR/nodejs-update-db"; then
+    echo "WARNING: nodejs-update-db absent, creating empty dataset" >&2
+    touch "$DBDIR/nodejs-update-db"
+fi
+checkTmpdir
+
+echo "<$ type h or help for usage, q or quit to exit"
+while :
+do
+    echo -n "$> "
+    read command
+    if echo "$command" | grep ' ' >/dev/null; then
+	eval `echo "$command" | sed 's|^\([^ \t]*\)[ \t]*\([^ \t].*\)$|cmd=\1 args="\2"|'`
+    else
+	cmd=$command
+	args=
+    fi
+    cmd=`echo $command | cut -d ' ' -f1`
+    case "$cmd" in
+	q|quit|exit)
+	    break
+	    ;;
+	a|add)
+	    nodeDbAddRepository "$args"
+	    ;;
+	c|cache)
+	    nodeDbAddCache "$args"
+	    ;;
+	d|dr|del|delrepo|rem|rm)
+	    nodeDbDelRepository "$args"
+	    ;;
+	dc|delcache)
+	    nodeDbDelCache
+	    ;;
+	di|delign|delignore|remi|remign|remignore|rmi|rmign|rmignore)
+	    nodeDbDelIgnore "$args"
+	    ;;
+	dnc|delnpmcache)
+	    npmClearCache
+	    ;;
+	e|env|environ|environment)
+	    cat <<EOF
+  database directory is $DBDIR
+  logs directory is $LOGDIR
+  npmjs cache TTL is set to $CACHETTL seconds
+  temporary directory is $TMPDIR
+  working directory is $WORKDIR
+EOF
+	    ;;
+	i|ign|ignore)
+	    nodeDbAddIgnore "$args"
+	    ;;
+	l|lr|ls|list|listrepo)
+	    nodeDbListRepository "$args"
+	    ;;
+	lc|listcache)
+	    nodeDbListCache "$args"
+	    ;;
+	li|listign)
+	    nodeDbListIgnore "$args"
+	    ;;
+	nvm|nvminstall)
+	    if ! test -s "$HOME/.nvm/nvm.sh"; then
+		installNvm
+	    else
+		echo "NOTICE: nvm already installed"
+	    fi
+	    ;;
+	h|help)
+	    cat <<EOF
+  (a|add) [repository URL or Org/name on GitHub]
+  (c|cache) [name of nodejs module to manually cache]
+  (d|del) [repository URL or Org/name on GitHub or folder name]
+  (dc|delcache) clears npmjs packages cache
+  (di|delign) [name to remove from the list of modules to ignore]
+  (dnc|delnpmcache) clears npm local cache
+  (e|env) prints runtime environment variables
+  (h|help)
+  (i|ign) [name to add to the list of modules to ignore]
+  (l|list) list registered repositories
+  (lc|listcache) lists cached modules and their last known version
+  (li|listign) lists ignored modules
+  (nvm|nvminstall) installs NVM if missing (would not work everywhere)
+  (q|quit)
+  (r|run) [repository name or regexpr]
+EOF
+	    ;;
+	r|run)
+	    $basePath/updateModules
+	    ;;
+	s|status)
+	    echo "  Repositories:"
+	    nodeDbListRepository 2>/dev/null || echo "none registered"
+	    echo "  Cached NodeJS modules versions:"
+	    nodeDbListCache 2>/dev/null || echo "none installed"
+	    echo "  Ignored Modules:"
+	    nodeDbListIgnore 2>/dev/null || echo "none installed"
+	    if ! test -s "$HOME/.nvm/nvm.sh"; then
+		echo "  WARNING: nvm not installed"
+	    else
+		export NVM_DIR="$HOME/.nvm"
+		. "$NVM_DIR/nvm.sh"
+		echo "  NVM running version `nvm version`"
+	    fi
+	    ;;
+	upupdowndownleftrightleftrightbastart)
+	    echo "  get a life"
+	    ;;
+	*)
+	    echo "WARNING: unrecognized command $cmd, type h for help" >&2
+	    ;;
+    esac
+done
+
+exit 0

@@ -1,0 +1,22 @@
+#!/bin/sh
+
+if test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif test -z "$DBDIR"; then
+    DBDIR=$WORKDIR
+fi
+
+if ! test -d $WORKDIR; then
+    echo "CRITICAL: repository working directory does not exist" >&2
+    exit 1
+elif ! test -d $DBDIR; then
+    echo "CRITICAL: database directory does not exist" >&2
+    exit 1
+elif ! test -e "$DBDIR/npmjs-cache"; then
+    echo "WARNING: npmjs-cache is absent" >&2
+fi
+
+rm -f $DBDIR/npmjs-cache
+
+exit 0

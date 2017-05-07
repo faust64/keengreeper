@@ -1,0 +1,92 @@
+#!/bin/sh
+
+if test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif test -z "$DBDIR"; then
+    DBDIR=$WORKDIR
+fi
+
+if ! test -d $WORKDIR; then
+    echo "CRITICAL: repository working directory does not exist" >&2
+    exit 1
+elif ! test -d $DBDIR; then
+    echo "CRITICAL: database directory does not exist" >&2
+    exit 1
+elif ! test -e "$DBDIR/nodejs-update-db"; then
+    echo "WARNING: nodejs-update-db absent, creating empty dataset" >&2
+    touch "$DBDIR/nodejs-update-db"
+fi
+
+if test "$1"; then
+    TARGET=$1
+    QUICK=true
+else
+    QUICK=false
+fi
+
+while :
+do
+    if test "$TARGET"; then
+	if test "$TARGET" = q -o "$TARGET" = quit; then
+	    exit 0
+	elif echo "$TARGET" | grep -E ':.*/[a-zA-Z0-9]' >/dev/null; then
+	    DEST=`echo "$TARGET" | sed 's|.*/\([^/]*\)$|\1|'`
+	    URL=$TARGET
+	    SCAN=`echo "$TARGET" | sed -e 's|^.*://||' -e 's|^\([^:/]*\).*$|\1|'`
+	    if echo "$SCAN" | grep @ >/dev/null; then
+		SCAN=`echo "$SCAN" | sed 's|^.*@\([^@]*\)$|\1|'`
+		if echo "$TARGET" | grep -E '^http[s]*://' >/dev/null; then
+		    SCAN=
+		fi
+	    fi
+	elif test -z "`echo $TARGET | cut -d/ -f3`"; then
+	    DEST=`echo "$TARGET" | sed 's|.*/\([^/]*\)$|\1|'`
+	    URL=git@github.com:$TARGET
+	    SCAN=github.com
+	else
+	    URL=
+	fi
+	if test "$URL"; then
+	    ret=2
+	    if test -d "$WORKDIR/$DEST"; then
+		echo "<add$ WARNING: can not register $TARGET, as $DEST already exists in $WORKDIR"
+	    else
+		if test "$SCAN"; then
+		    if ! grep ^$SCAN $HOME/.ssh/known_hosts >/dev/null 2>&1; then
+			test -d $HOME/.ssh || mkdir -p $HOME/.ssh
+			if ! ssh-keyscan $SCAN >/dev/null 2>&1; then
+			    echo "<add$ CRITICAL: can not keyscan $SCAN adding $TARGET" >&2
+			    if $QUICK; then
+				exit 2
+			    fi
+			elif ! ssh-keyscan $SCAN >>$HOME/.ssh/known_hosts 2>/dev/null; then
+			    echo "<add: CRITICAL: can not trust $SCAN host key adding $TARGET" >&2
+			    if $QUICK; then
+				exit 2
+			    fi
+			fi
+		    fi
+		fi
+		cd $WORKDIR
+		if ! git clone $URL; then
+		    echo "<add$ WARNING: failed cloning $TARGET"
+		else
+		    echo "$TARGET;$DEST;0" >>$DBDIR/nodejs-update-db
+		    echo "<add$ NOTICE: added $TARGET"
+		    ret=0
+		fi
+	    fi
+	    if $QUICK; then
+		exit $ret
+	    fi
+	else
+	    echo "<add$ malformatted URL $TARGET"
+	fi
+    fi
+    echo "<add$ type in a git URL, or either q to quit"
+    echo -n "add$> "
+    read TARGET
+done
+
+exit 2

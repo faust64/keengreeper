@@ -1,0 +1,21 @@
+#!/bin/sh
+
+if test -z "$1"; then
+    echo "CRITICAL: missing repository argument" >&2
+    exit 1
+elif test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $WORKDIR/$1/.git; then
+    echo "CRITICAL: repository $1 does not exist in $WORKDIR" >&2
+    exit 1
+fi
+
+cd $WORKDIR/$1
+
+if ! git pull >/dev/null; then
+    echo "CRITICAL: unable pulling changes for $1" >&2
+    exit 2
+fi
+
+exit 0
