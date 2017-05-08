@@ -16,6 +16,18 @@ else
     TARGET=$1
 fi
 
+if test "$SNYK_THROTTLE"; then
+    if test "$SNYK_THROTTLE" -ge 0 >/dev/null 2>&1; then
+	case "$SNYK_THROTTLE" in
+	    0-10)		;;
+	    11-50)	sleep 1 ;;
+	    51-300)	sleep 2	;;
+	    301-600)	sleep 3	;;
+	    601-999)	sleep 4	;;
+	    *)		sleep 5	;;
+	esac
+    fi
+fi
 if ! wget https://snyk.io/test/npm/$TARGET -q -O $TMPFILE; then
     echo "CRITICAL: failed fetching $TARGET data from snyk.io" >&2
     exit 2

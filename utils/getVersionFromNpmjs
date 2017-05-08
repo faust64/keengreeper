@@ -10,6 +10,18 @@ if test -z "$TMPDIR"; then
 fi
 TMPFILE=$TMPDIR/$1.$$
 
+if test "$NPMJS_THROTTLE"; then
+    if test "$NPMJS_THROTTLE" -ge 0 >/dev/null 2>&1; then
+	case "$NPMJS_THROTTLE" in
+	    0-10)		;;
+	    11-50)	sleep 1 ;;
+	    51-300)	sleep 2	;;
+	    301-600)	sleep 3	;;
+	    601-999)	sleep 4	;;
+	    *)		sleep 5	;;
+	esac
+    fi
+fi
 if ! wget https://www.npmjs.com/package/$1 -q -O $TMPFILE; then
     echo "CRITICAL: failed fetching $1 data from npmjs.com" >&2
     rm -f $TMPFILE
