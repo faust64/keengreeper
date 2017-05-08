@@ -1,0 +1,62 @@
+#!/bin/sh
+
+SUITE="Snyk Vulnerabilities"
+for d in tests .; do test -s $d/head && . $d/head && break; done
+
+logTest we can cache a valid module from snyk
+snykDbAddCache azure-storage 2.0.0
+logExpect $? 0 add module to snyk local cache
+
+logTest we can find previously added module cached
+snykDbListCache  | grep '^azure-storage@2.0.0: '
+logExpect $? 0 snyk local cache consistent
+
+logTest we can purge our cache
+snykDbDelCache
+logExpect $? 0 snyk cache cleared
+
+logTest we can not list snyk vulnerabilities with an empty database
+snykDbListCache
+logExpect $? 1 listCache with no database
+
+logTest we can cache another valid module from snyk
+snykDbAddCache express 4.15.2
+logExpect $? 0 add module to npmjs local cache
+
+logTest wen can re-cache that same module from snyk
+snykDbAddCache express 4.15.2
+logExpect $? 0 re-cache module
+
+logTest we can not cache an invalid module
+snykDbAddCache invalid/name
+logExpect $? 2 adding invalid module to snyk local cache
+
+logTest we can find previously added module cached
+snykDbListCache | grep '^express@4.15.2: '
+logExpect $? 0 snyk local cache consistent
+
+logTest we can cache a valid module from snyk
+snykDbAddCache azure-storage 2.0.0
+logExpect $? 0 add module to snyk local cache
+
+logTest we can iterate on module checking for expired data
+snykDbExpireCache
+logExpect $? 0 dropping outdated records from local cache
+
+logTest we do find a warning for a known to be vulnerable module
+snykDbGetCache azure-storage 2.0.0 #| grep 'Upgrade validator to version'
+logExpect $? 0 find recommendations fixing a known vulnerability
+
+logTest we do not find a unexpected versions to be cached
+snykDbGetCache azure-storage 2.1.0
+logExpect $? 2 found unexpected module/version combination cached
+
+logTest we do not find warnings for a module supposed to be healthy
+snykDbGetCache express 4.15.2 2>&1 | grep 'has no known vulnerability'
+logExpect $? 0 healthy module marked as such
+
+logTest we get an error querying cache for an unknown module
+snykDbGetCache plan9fromouterspace 3.2.1
+logExpect $? 2 can not query cache for unknown module
+
+logDone

@@ -1,0 +1,75 @@
+#!/bin/sh
+
+if test -z "$DBDIR"; then
+    echo "CRITICAL: DBDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $DBDIR; then
+    echo "CRITICAL: database directory does not exist" >&2
+    exit 1
+elif ! test -e "$DBDIR/snyk-cache"; then
+    echo "CRITICAL: snyk-cache is absent" >&2
+    exit 2
+fi
+
+if test "$1$2"; then
+    TARGET=$1
+    VERSION=$2
+    QUICK=true
+else
+    QUICK=false
+fi
+if test "$SNYKTTL"; then
+    TTL=$SNYKTTL
+else
+    TTL=604800
+fi
+
+while :
+do
+    if test "$TARGET" -a "$VERSION"; then
+	if echo "$TARGET"  | grep -E '^[^_\./][^/]*$' >/dev/null; then
+	    if grep "^$TARGET;$VERSION;" $DBDIR/snyk-cache >/dev/null 2>&1; then
+#		checked=`awk -F';' "/^$TARGET;$VERSION;/{print \$3;exit}" $DBDIR/snyk-cache`
+		checked=`grep "^$TARGET;$VERSION;" $DBDIR/snyk-cache | cut -d';' -f3 | head -1`
+		if ! test "$checked" -gt 0 >/dev/null ; then
+		    echo "<get$ WARNING: $TARGET@$VERSION record last check date invalid" >&2
+		elif ! test $TTL -ge 0 >/dev/null; then
+		    echo "<get$ WARNING: TTL ($TTL) invalid to evaluate $TARGET@$VERSION consistency" >&2
+		else
+		    expire=`expr $(date +%s) - $TTL`
+		    if test $checked -lt $expire; then
+			echo "<get$ WARNING: $TARGET@$VERSION record is expired, proceeding with last known data and scheduling refresh" >&2
+			( sleep 2 ; snykDbAddCache $name >/dev/null 2>&1 & )
+		    fi
+		    if grep -E "^$TARGET;$VERSION;[0-9]*;sane$" $DBDIR/snyk-cache >/dev/null; then
+			echo "<get$ NOTICE: $TARGET@$VERSION has no known vulnerability" >&2
+		    else
+			sed "s|^$TARGET;$VERSION;[^;]*;||" $DBDIR/snyk-cache
+		    fi
+		    if $QUICK; then
+			exit 0
+		    fi
+		fi
+	    else
+		echo "<get$ CRITICAL: failed matching $TARGET@$VERSION in local cache" >&2
+	    fi
+	    if $QUICK; then
+		exit 2
+	    fi
+	else
+	    echo "<get$ WARNING: malformatted NodeJS module name $TARGET"
+	fi
+    elif test "$TARGET" = q -o "$TARGET" = quit; then
+	exit 0
+    else
+	echo "<get$ CRITICAL: missing $TARGET version to check" >&2
+	if $QUICK; then
+	    exit 2
+	fi
+    fi
+    echo "<get$ type in a NodeJS module name and version, or either q or quit to exit"
+    echo -n "get$> "
+    read TARGET VERSION
+done
+
+exit 2

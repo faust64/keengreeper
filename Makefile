@@ -30,11 +30,13 @@ deinstall:
 genconf:
 	test -f $(ETC_DIR)/keengreeper.conf || \
 	    ( \
-		echo export WORKDIR=$(SRC_DIR); \
-		echo export TMPDIR=$(TMP_DIR); \
-		echo export LOGDIR=$(LOG_DIR); \
 		echo export DBDIR=$(LIB_DIR); \
+		echo export LOGDIR=$(LOG_DIR); \
+		echo export TMPDIR=$(TMP_DIR); \
+		echo export WORKDIR=$(SRC_DIR); \
+		echo; \
 		echo export CACHETTL=3600; \
+		echo export SNYKTTL=604800; \
 	    ) >$(ETC_DIR)/keengreeper.conf
 
 installdeps:
@@ -69,7 +71,7 @@ test:
 	export WORKDIR=`pwd`/work; \
 	export TMPDIR=`pwd`/tmp; \
 	export LOGDIR=`pwd`/log; \
-	for test in 01.repositories 02.ignored-modules 03.cached-modules 04.version; \
+	for test in 01.repositories 02.ignored-modules 03.cached-modules 04.version 05.snyk; \
 	    do \
 		if test -x tests/$$test; then \
 		    ./tests/$$test || exit 1; \

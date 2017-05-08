@@ -1,0 +1,44 @@
+#!/bin/sh
+
+if test -z "$SNYKTTL"; then
+    SNYKTTL=604800
+fi
+
+if test -z "$DBDIR"; then
+    echo "CRITICAL: DBDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $DBDIR; then
+    echo "CRITICAL: database directory does not exist" >&2
+    exit 1
+elif test "$SNYKTTL" = 0; then
+    exit 0
+elif ! test -e "$DBDIR/snyk-cache"; then
+    echo "CRITICAL: snyk-cache is absent" >&2
+    exit 1
+fi
+
+date=`date +%s`
+expire=`expr $date - $SNYKTTL`
+if test "$expire" -ge 0 >/dev/null 2>&1; then
+    sed 's|;| |g' $DBDIR/snyk-cache | while read name version lastCheck data
+	do
+	    if test "$lastCheck" -lt $expire; then
+		if ! sed -i "s/^$name;$version;/d" $DBDIR/snyk-cache; then
+		    if grep "^$name;" $DBDIR/snyk-cache >/dev/null; then
+			echo "CRITICAL: failed expiring $name@$version from snyk-cache" >&2
+		    else
+			echo "NOTICE: expired $name@$version from snyk-cache"
+		    fi
+		else
+		    echo "NOTICE: expired $name@$version from snyk-cache"
+		fi
+	    elif test "$DEBUG"; then
+		echo "NOTICE: keeping $name@$version"
+	    fi
+	done
+else
+    echo "CRITICAL: invalid expiry date, check SNYKTTL definition" >&2
+    exit 2
+fi
+
+exit 0

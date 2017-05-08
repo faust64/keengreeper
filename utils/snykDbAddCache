@@ -1,0 +1,78 @@
+#!/bin/sh
+
+if test -z "$DBDIR"; then
+    echo "CRITICAL: DBDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $DBDIR; then
+    echo "CRITICAL: database directory does not exist" >&2
+    exit 1
+elif ! test -e "$DBDIR/snyk-cache"; then
+    echo "WARNING: snyk-cache is absent" >&2
+fi
+
+if test -z "$TMPDIR"; then
+    TMPDIR=/tmp
+fi
+TMPFILE=$TMPDIR/$1.$$
+
+if test "$1$2"; then
+    TARGET=$1
+    VERSION=$2
+    QUICK=true
+else
+    QUICK=false
+fi
+
+while :
+do
+    if test "$TARGET" -a "$VERSION"; then
+	if echo "$TARGET"  | grep -E '^[^_\./][^/]*$' >/dev/null; then
+	    if checkVersionAgainstSnyk $TARGET $VERSION >$TMPFILE 2>/dev/null; then
+		lastCheck=`date +%s`
+		if grep "^$TARGET;$VERSION;" $DBDIR/snyk-cache >/dev/null 2>&1; then
+		    if ! sed -i "/^$TARGET;$VERSION;/d" $DBDIR/snyk-cache 2>/dev/null; then
+			echo "<add$ CRITICAL: failed deleting former data for $TARGET@$VERSION" >&2
+			exit 1
+		    fi
+		    echo "<add$ NOTICE: purged former record for $TARGET@$VERSION"
+		fi
+		if test -s $TMPFILE; then
+		    while read line
+		    do
+			echo "$TARGET;$VERSION;$lastCheck;$line"
+		    done <$TMPFILE >>$DBDIR/snyk-cache
+		else
+		    echo "$TARGET;$VERSION;$lastCheck;sane" >>$DBDIR/snyk-cache
+		    echo "<add$ NOTICE: updated $TARGET@$VERSION"
+		fi
+		rm -f $TMPFILE
+		if $QUICK; then
+		    exit 0
+		fi
+	    else
+		echo "<add$ CRITICAL: failed fetching snyk data for $TARGET@$VERSION" >&2
+	    fi
+	    rm -f $TMPFILE
+	    if $QUICK; then
+		exit 2
+	    fi
+	else
+	    echo "<add$ WARNING: malformatted NodeJS module name $TARGET"
+	    if $QUICK; then
+		exit 2
+	    fi
+	fi
+    elif test "$TARGET" = q -o "$TARGET" = quit; then
+	exit 0
+    else
+	echo "<add$ CRITICAL: missing $TARGET version to check" >&2
+	if $QUICK; then
+	    exit 2
+	fi
+    fi
+    echo "<add$ type in a NodeJS module name and version, or either q or quit to exit"
+    echo -n "add$> "
+    read TARGET VERSION
+done
+
+exit 2

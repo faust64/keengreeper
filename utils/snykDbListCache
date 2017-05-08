@@ -1,0 +1,40 @@
+#!/bin/sh
+
+if test -z "$DBDIR"; then
+    echo "CRITICAL: DBDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $DBDIR; then
+    echo "CRITICAL: database directory does not exist" >&2
+    exit 1
+elif ! test -e "$DBDIR/snyk-cache"; then
+    echo "CRITICAL: snyk-cache is absent" >&2
+    exit 1
+fi
+
+if test "$2"; then
+    MATCH="^$1;$2;"
+elif test "$1"; then
+    MATCH="^$1"
+else
+    MATCH='.*'
+fi
+
+sed 's|;| |g' $DBDIR/snyk-cache | while read name version lastCheck data
+    do
+	if test "$lastName" != "$name"; then
+	    if test "$lastCheck" = 0; then
+		lastCheckString="has not been checked yet"
+	    elif test "$lastCheck" -gt 0 >/dev/null; then
+		lastCheckString="last checked on `date -d @$lastCheck` ($lastCheck)"
+	    else
+		lastCheckString="illegal last check date on DB"
+	    fi
+	    echo "$name@$version, $lastCheckString"
+	fi
+	if test "$data" = sane; then
+	    data="known to be safe"
+	fi
+	echo "$name@$version: $data"
+    done | sort | grep -E "$MATCH"
+
+exit $?

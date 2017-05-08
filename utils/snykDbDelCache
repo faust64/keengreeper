@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if test -z "$DBDIR"; then
+    echo "CRITICAL: DBDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $DBDIR; then
+    echo "CRITICAL: database directory does not exist" >&2
+    exit 1
+elif ! test -e "$DBDIR/snyk-cache"; then
+    echo "WARNING: snykcache is absent" >&2
+fi
+
+rm -f $DBDIR/snyk-cache
+
+exit 0
