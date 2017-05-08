@@ -10,7 +10,7 @@ fi
 
 if cat "$1" | grep -A5 '"engines"' | awk '/"node":/{print $2}' | grep [0-9] >/dev/null; then
     eval `cat "$1" | grep -A5 '"engines"' | awk '/"node":/{print "target="$2}'`
-    echo $target
+    echo $target | sed 's|^>=||'
 else
     echo "lts"
 fi
