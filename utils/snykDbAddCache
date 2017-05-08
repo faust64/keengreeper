@@ -27,7 +27,7 @@ while :
 do
     if test "$TARGET" -a "$VERSION"; then
 	if echo "$TARGET"  | grep -E '^[^_\./][^/]*$' >/dev/null; then
-	    if checkVersionAgainstSnyk $TARGET $VERSION >$TMPFILE 2>/dev/null; then
+	    if getVersionFromSnyk $TARGET $VERSION >$TMPFILE 2>/dev/null; then
 		lastCheck=`date +%s`
 		if grep "^$TARGET;$VERSION;" $DBDIR/snyk-cache >/dev/null 2>&1; then
 		    if ! sed -i "/^$TARGET;$VERSION;/d" $DBDIR/snyk-cache 2>/dev/null; then
