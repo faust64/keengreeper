@@ -61,7 +61,7 @@ fi
 
 cd $TMPDIR/$1
 
-if git branch | grep $DSTBRANCH >/dev/null; then
+if git branch -a | grep $DSTBRANCH >/dev/null; then
     echo "NOTICE: a branch $DSTBRANCH already exists in $1" >&2
     exit 0
 elif ! git branch $DSTBRANCH >/dev/null; then
