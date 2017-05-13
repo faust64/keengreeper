@@ -117,6 +117,13 @@ EOF
   (nvm|nvminstall) installs NVM if missing (would not work everywhere)
   (q|quit)
   (r|run) [repository name or regexpr]
+  (s|status)
+  (sa|snykadd) [module name] [module version]
+  (sd[snykdelete)
+  (se|snykexpire)
+  (sg|snykget) [module name] [module version]
+  (sls|snykls) [module name] [module version]
+  (slv|snyklistvuln)
 EOF
 	    ;;
 	r|run)
@@ -125,10 +132,12 @@ EOF
 	s|status)
 	    echo "  Repositories:"
 	    nodeDbListRepository 2>/dev/null || echo "none registered"
-	    echo "  Cached NodeJS modules versions:"
-	    nodeDbListCache 2>/dev/null || echo "none installed"
 	    echo "  Ignored Modules:"
 	    nodeDbListIgnore 2>/dev/null || echo "none installed"
+	    echo "  Cached NodeJS modules versions:"
+	    nodeDbListCache 2>/dev/null || echo "none cached"
+	    echo "  Snyk Cache:"
+	    snykDbListCache 2>/dev/null || "none cached"
 	    if ! test -s "$HOME/.nvm/nvm.sh"; then
 		echo "  WARNING: nvm not installed"
 	    else
@@ -136,6 +145,24 @@ EOF
 		. "$NVM_DIR/nvm.sh"
 		echo "  NVM running version `nvm version`"
 	    fi
+	    ;;
+	sa|snykadd)
+	    snykDbAddCache "$args"
+	    ;;
+	sd|snykdel)
+	    snykDbDelCache "$args"
+	    ;;
+	se|snykexpire)
+	    snykDbExpireCache
+	    ;;
+	sg|snykget)
+	    snykDbGetCache "$args"
+	    ;;
+	sls|snykls)
+	    snykDbListCache "$args"
+	    ;;
+	slv|snyklistvuln)
+	    snykDbListVulnerabilities
 	    ;;
 	upupdowndownleftrightleftrightbastart)
 	    echo "  get a life"
