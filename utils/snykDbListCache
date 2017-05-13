@@ -19,7 +19,7 @@ else
     MATCH='.*'
 fi
 
-sed 's|;| |g' $DBDIR/snyk-cache | while read name version lastCheck data
+sed 's|;| |g' $DBDIR/snyk-cache | sort | while read name version lastCheck data
     do
 	if test "$lastName" != "$name"; then
 	    if test "$lastCheck" = 0; then
@@ -29,12 +29,11 @@ sed 's|;| |g' $DBDIR/snyk-cache | while read name version lastCheck data
 	    else
 		lastCheckString="illegal last check date on DB"
 	    fi
-	    echo "$name@$version, $lastCheckString"
+	    echo "$name@$version -- $lastCheckString"
 	fi
-	if test "$data" = sane; then
-	    data="known to be safe"
+	if test sane != "$data"; then
+	    echo "$name@$version: $data"
 	fi
-	echo "$name@$version: $data"
-    done | sort | grep -E "$MATCH"
+    done | grep -E "$MATCH"
 
 exit $?
