@@ -20,7 +20,7 @@ NodeJS dependencies involved and their last known versions, as well as a list of
 modules whose updates we should ignore.
 Running this pseudo-shell, type `h` or `help` to display the help menu.
 
-The `updateModules` script should then iterate previously registered
+The `updateModules` script should then iterate on previously registered
 repositories, making sure they're working on the staging branch (if such exists,
 master otherwise), pulling the lastest changes from git upstream, looking for
 dependencies listed in the corresponding package.json, checking for known
