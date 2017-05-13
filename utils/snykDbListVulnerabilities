@@ -1,0 +1,21 @@
+#!/bin/sh
+
+if test -z "$DBDIR"; then
+    echo "CRITICAL: DBDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $DBDIR; then
+    echo "CRITICAL: database directory does not exist" >&2
+    exit 1
+elif ! test -e "$DBDIR/snyk-cache"; then
+    echo "CRITICAL: snyk-cache is absent" >&2
+    exit 1
+fi
+
+sed 's|;| |g' $DBDIR/snyk-cache | sort | while read name version lastCheck data
+    do
+	if test sane != "$data"; then
+	    echo "$name@$version: $data"
+	fi
+    done
+
+exit $?
