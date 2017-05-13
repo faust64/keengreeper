@@ -33,8 +33,8 @@ elif ! test -d $DBDIR; then
 elif ! test -s $DBDIR/nodejs-update-db; then
     cat <<EOF >&2
 CRITICAL: nodejs-update-db absent or empty
-	  use nodejs-update-cli to create an empty dataset, and configure which
-	  repositories our job should be working with.
+	  use $basePath/configure to create an empty dataset, and configure
+	  which repositories our job should be working with.
 EOF
     exit 1
 elif ! checkTmpdir; then
