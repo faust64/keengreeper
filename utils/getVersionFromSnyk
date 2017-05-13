@@ -38,7 +38,7 @@ elif ! test -s $TMPFILE; then
 fi
 
 if ! grep '<meta name="description" content="No vulnerabilities found. This is a good thing!">' $TMPFILE >/dev/null; then
-    parseRemediation $TMPFILE | sed -e 's|<p>||g' -e 's|</p>||g' -e 's|<code>||g' -e 's|</code>||g' -e 's|^[ \t]*||' -e 's|\.$||'
+    parseRemediation $TMPFILE | sed -e 's|<[/]*p>||g' -e 's|<a href=[^>]*>||g' -e 's|</a>||g' -e 's|<[/]*code>||g' -e 's|<[/]*strong>||g' -e 's|&gt[; ]|>|g' -e 's|&lt[; ]|<|g' -e 's|^[ \t]*||' -e 's|\.$||'
 fi
 
 rm -f $TMPFILE
