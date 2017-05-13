@@ -29,6 +29,9 @@ your package.json gets updated. If a `node_shrinkwrap` folder exists, its
 content would be updated as well. Eventually these new branches are pushed to
 upstream for further verification (hopefully: CI).
 
+Then, the `updateVulnerabilities` script may be used to iterate on previously
+cached NodeJS modules, looking for potential vulnerabilities.
+
 ## Setup
 
 We first need to set some variables. Look at `env.sample` for an example, you
