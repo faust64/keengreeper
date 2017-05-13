@@ -39,7 +39,7 @@ do
 		    expire=`expr $(date +%s) - $TTL`
 		    if test $checked -lt $expire; then
 			echo "<get$ WARNING: $TARGET@$VERSION record is expired, proceeding with last known data and scheduling refresh" >&2
-			( sleep 2 ; snykDbAddCache $name >/dev/null 2>&1 & )
+			( sleep 2 ; snykDbAddCache $name $VERSION >/dev/null 2>&1 & )
 		    fi
 		    if grep -E "^$TARGET;$VERSION;[0-9]*;sane$" $DBDIR/snyk-cache >/dev/null; then
 			echo "<get$ NOTICE: $TARGET@$VERSION has no known vulnerability" >&2
