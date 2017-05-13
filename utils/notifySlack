@@ -1,0 +1,19 @@
+#!/bin/sh
+
+if test -z "$SLACK_HOOK_URL"; then
+    echo "CRITICAL: missing hook url" >&2
+    exit 1
+elif test -z "$1"; then
+    echo "WARNING: empty message" >&2
+    exit 0
+fi
+
+data=`echo $@ | sed 's|"|\"|g' | sed "s|'|\'|g"`
+json="{\"text\": \"$data\"}"
+if ! echo "$SLACK_HOOK_URL" | grep hooks.slack.com >/dev/null; then
+    SLACK_HOOK_URL=https://hooks.slack.com/services/$SLACK_HOOK_URL
+fi
+
+curl -s --data-urlencode "payload=$json" "$SLACK_HOOK_URL" >/dev/null
+
+exit $?
