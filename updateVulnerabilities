@@ -1,0 +1,54 @@
+#!/bin/sh
+
+basePath=`dirname $0`
+export PATH="$basePath/utils:$PATH"
+
+if test -s /etc/keengreeper.conf; then
+    . /etc/keengreeper.conf
+fi
+if test -z "$LOGDIR"; then
+    export LOGDIR=`pwd`/logs
+fi
+if test -z "$TMPDIR"; then
+    export TMPDIR=`pwd`/tmp
+fi
+if test -z "$DBDIR"; then
+    export DBDIR=$WORKDIR
+fi
+if test -z "$CACHETTL"; then
+    export CACHETTL=3600
+fi
+test -d $LOGDIR || mkdir -p $LOGDIR
+test -d $TMPDIR || mkdir -p $TMPDIR
+test -d $DBDIR  || mkdir -p $DBDIR
+if ! test -d $DBDIR; then
+    echo "CRITICAL: $DBDIR does not exist" >&2
+    exit 1
+elif ! test -s $DBDIR/npmjs-cache; then
+    echo "CRITICAL: npmjs-cache is absent" >&2
+    exit 1
+elif ! nodeDbListCache >/dev/null 2>&1; then
+    echo "CRITICAL: failed listing npmjs cache" >&2
+    exit 1
+fi
+
+SNYK_THROTTLE=0
+nodeDbListCache | grep ', last known version' \
+    | sed 's|^\(.*\), last known version was \(.*\) as of .*$|\1 \2|' \
+    | while read package version
+	do
+	    if ! snykDbGetCache $package $version >/dev/null 2>&1; then
+		if ! snykDbAddCache $package $version >/dev/null 2>&1; then
+		    echo "WARNING: failed querying snyk for $package/$version" >&2
+		else
+		    echo "NOTICE: added $package/$version to local cache"
+		fi
+		SNYK_THROTTLE=`expr $SNYK_THROTTLE`
+	    else
+		echo "NOTICE: $package/$version already cached"
+	    fi
+	done
+
+echo done
+
+exit 0
