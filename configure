@@ -50,6 +50,7 @@ do
 	args=
     fi
     cmd=`echo $command | cut -d ' ' -f1`
+    test -z "$cmd" && continue
     case "$cmd" in
 	q|quit|exit)
 	    break
