@@ -20,11 +20,11 @@ snykDbListCache
 logExpect $? 1 listCache with no database
 
 logTest we can cache another valid module from snyk
-snykDbAddCache express 4.15.2
+snykDbAddCache df 1.1.1
 logExpect $? 0 add module to npmjs local cache
 
 logTest wen can re-cache that same module from snyk
-snykDbAddCache express 4.15.2
+snykDbAddCache df 1.1.1
 logExpect $? 0 re-cache module
 
 logTest we can not cache an invalid module
@@ -32,7 +32,7 @@ snykDbAddCache invalid/name
 logExpect $? 2 adding invalid module to snyk local cache
 
 logTest we can find previously added module cached
-snykDbListCache | grep '^express@4.15.2 -- '
+snykDbListCache | grep '^df@1.1.1 -- '
 logExpect $? 0 snyk local cache consistent
 
 logTest we can cache a valid module from snyk
@@ -52,11 +52,23 @@ snykDbGetCache azure-storage 2.1.0
 logExpect $? 2 found unexpected module/version combination cached
 
 logTest we do not find warnings for a module supposed to be healthy
-snykDbGetCache express 4.15.2 2>&1 | grep 'has no known vulnerability'
+snykDbGetCache df 1.1.1 2>&1 | grep 'has no known vulnerability'
 logExpect $? 0 healthy module marked as such
 
 logTest we get an error querying cache for an unknown module
 snykDbGetCache plan9fromouterspace 3.2.1
 logExpect $? 2 can not query cache for unknown module
+
+logTest we can evict a record from local cache
+snykDbEvictCache azure-storage 2.0.0
+logExpect $? 0 evicted module from snyk cache
+
+logTest evicted record actually dropped from cache
+snykDbGetCache azure-storage 2.0.0
+logExpect $? 2 can not query cache for unknown module
+
+logTest we can evict some un-cached module
+snykDbEvictCache troll 2.0.0
+logExpect $? 0 eviction of unknown record does not fail
 
 logDone

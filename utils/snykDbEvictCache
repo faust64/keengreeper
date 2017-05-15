@@ -1,0 +1,50 @@
+#!/bin/sh
+
+if test -z "$DBDIR"; then
+    echo "CRITICAL: DBDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $DBDIR; then
+    echo "CRITICAL: database directory does not exist" >&2
+    exit 1
+elif test "$SNYKTTL" = 0; then
+    exit 0
+elif ! test -e "$DBDIR/snyk-cache"; then
+    echo "CRITICAL: snyk-cache is absent" >&2
+    exit 1
+fi
+
+if test "$1$2"; then
+    TARGET=$1
+    VERSION=$2
+    QUICK=true
+else
+    QUICK=false
+fi
+
+while :
+do
+    if test "$TARGET" -a "$VERSION"; then
+	if grep "^$TARGET;$VERSION;" $DBDIR/snyk-cache >/dev/null 2>&1; then
+	    if ! sed -i "/^$TARGET;$VERSION;/d" $DBDIR/snyk-cache; then
+		echo "CRITICAL: failed evicting $TARGET@$VERSION from snyk-cache" >&2
+		if $QUICK; then
+		    exit 2
+		fi
+	    else
+		echo "NOTICE: evicted $TARGET@$VERSION from snyk-cache"
+	    fi
+	else
+	    echo "NOTICE: $TARGET@$VERSION not in snyk-cache"
+	fi
+	if $QUICK; then
+	    exit 0
+	fi
+    elif test "$TARGET" = q -o "$TARGET" = quit; then
+	exit 0
+    fi
+    echo "<del$ type in a NodeJS module name and version, or either q or quit to exit"
+    echo -n "del$> "
+    read TARGET VERSION
+done
+
+exit 2
