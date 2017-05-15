@@ -29,7 +29,7 @@ if test "$expire" -ge 0 >/dev/null 2>&1; then
     sed 's|;| |g' $DBDIR/npmjs-cache | while read name version lastCheck
 	do
 	    if test "$lastCheck" -lt $expire; then
-		if ! sed -i "s/^$name;$version;/d" $DBDIR/npmjs-cache; then
+		if ! sed -i "/^$name;$version;/d" $DBDIR/npmjs-cache; then
 		    if grep "^$name;" $DBDIR/npmjs-cache >/dev/null; then
 			echo "CRITICAL: failed expiring $name from npmjs-cache" >&2
 		    else
