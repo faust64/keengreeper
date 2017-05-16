@@ -49,6 +49,21 @@ nodeDbListCache | grep ', last known version' \
 	    fi
 	done
 
+snykDbListCache | grep ' last checked on ' | sort -u \
+    | sed 's|^\([^@]*\)@\([^ ]*\) .*|\1 \2|' \
+    | while read package version
+	do
+	    if ! nodeDbGetCache $package >/dev/null 2>&1; then
+		if ! nodeDbListIgnore "^$package$" >/dev/null 2>&1; then
+		    if ! snykDbEvictCache $package $version >/dev/null 2>&1; then
+			echo "WARNING: failed evicting $package/$version from local cache"
+		    else
+			echo "NOTICE: evicted $package/$version from local cache"
+		    fi
+		fi
+	    fi
+	done
+
 echo done
 
 exit 0
