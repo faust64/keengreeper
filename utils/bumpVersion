@@ -11,13 +11,17 @@ elif test -f "$2" -a -z "$3"; then
 	commitMsg="chore(package): bump $dep to $rem"
 	DSTBRANCH=chaos-$dep$rem
     else
-	commitMsg="chore(package): bump"
 	while read module oldVersion newVersion
 	do
 	    subject="$subject-$module$newVersion"
-	    commitMsg="$commitMsg $module to $newVersion,"
+	    commitMsgStr="$commitMsgStr $module to $newVersion,"
 	done <$2
-	commitMsg=`echo "$commitMsg" | sed 's|,$||'`
+	commitMsgStr=`echo "$commitMsgStr" | sed 's|,$||'`
+	if test `echo "$commitMsgStr" | wc -c` -gt 78; then
+	    commitMsg="chore(package): bump nodejs dependencies"
+	else
+	    commitMsg="chore(package): bump $commitMsgStr"
+	fi
 	DSTBRANCH=chaos$subject
     fi
 else
