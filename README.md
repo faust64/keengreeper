@@ -32,6 +32,9 @@ upstream for further verification (hopefully: CI).
 Then, the `updateVulnerabilities` script may be used to iterate on previously
 cached NodeJS modules, looking for potential vulnerabilities.
 
+The `expireCaches` drops references to dependencies from your NodeJS modules &
+Snyk caches, when these are no longer relevant to your repositories.
+
 ## Setup
 
 We first need to set some variables. Look at `env.sample` for an example, you
@@ -122,5 +125,6 @@ Being sure our magic works, you may consider setting up some cron job:
     crontab -l
     echo "30 */6 * * * `pwd`/updateModules >>log/cron.log 2>&1"
     echo "45 4 * * * `pwd`/updateVulnerabilities >>log/snyk-cron.log 2>&1"
+    echo "15 0 * * * `pwd`/expireCaches >>log/cache-cron.log 2>&1"
 ) | crontab -
 ```
