@@ -12,7 +12,7 @@ snykDbListCache  | grep '^azure-storage@2.0.0: '
 logExpect $? 0 snyk local cache consistent
 
 logTest we can purge our cache
-snykDbDelCache
+snykDbDropCache
 logExpect $? 0 snyk cache cleared
 
 logTest we can not list snyk vulnerabilities with an empty database

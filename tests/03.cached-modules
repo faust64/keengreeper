@@ -12,7 +12,7 @@ nodeDbListCache  | grep '^q, '
 logExpect $? 0 npmjs local cache consistent
 
 logTest we can purge our cache
-nodeDbDelCache
+nodeDbDropCache
 logExpect $? 0 npmjs cache cleared
 
 logTest we can not list cached modules with an empty database

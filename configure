@@ -64,8 +64,8 @@ do
 	d|dr|del|delrepo|rem|rm)
 	    nodeDbDelRepository "$args"
 	    ;;
-	dc|delcache)
-	    nodeDbDelCache
+	dpc|dropcache)
+	    nodeDbDropCache
 	    ;;
 	di|delign|delignore|remi|remign|remignore|rmi|rmign|rmignore)
 	    nodeDbDelIgnore "$args"
@@ -106,7 +106,7 @@ EOF
   (a|add) [repository URL or Org/name on GitHub]
   (c|cache) [name of nodejs module to manually cache]
   (d|del) [repository URL or Org/name on GitHub or folder name]
-  (dc|delcache) clears npmjs packages cache
+  (dpc|dropcache) clears npmjs packages cache
   (di|delign) [name to remove from the list of modules to ignore]
   (dnc|delnpmcache) clears npm local cache
   (e|env) prints runtime environment variables
@@ -120,7 +120,7 @@ EOF
   (r|run) [repository name or regexpr]
   (s|status)
   (sa|snykadd) [module name] [module version]
-  (sd[snykdelete)
+  (sdr|snykdrop)
   (se|snykexpire)
   (sg|snykget) [module name] [module version]
   (sls|snykls) [module name] [module version]
@@ -150,8 +150,8 @@ EOF
 	sa|snykadd)
 	    snykDbAddCache "$args"
 	    ;;
-	sd|snykdel)
-	    snykDbDelCache "$args"
+	sdr|snykdrop)
+	    snykDbDropCache "$args"
 	    ;;
 	se|snykexpire)
 	    snykDbExpireCache
