@@ -12,6 +12,14 @@ checkVersion 1.2.3 1.3.3
 logExpect $? 2 versions differ
 
 logTest comparing versions works
+checkVersion 1.0.3 1.0.6
+logExpect $? 2 versions differ
+
+logTest comparing versions works
+checkVersion 1.2.3 2.2.3
+logExpect $? 2 versions differ
+
+logTest comparing versions works
 checkVersion 1.2.x 1.2.3
 logExpect $? 0 versions are equals
 
