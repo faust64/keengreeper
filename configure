@@ -65,7 +65,7 @@ do
 	    nodeDbDelRepository "$args"
 	    ;;
 	dc|delcache)
-	    nodeDbDelCache "$args"
+	    nodeDbEvictCache "$args"
 	    ;;
 	dpc|dropcache)
 	    nodeDbDropCache

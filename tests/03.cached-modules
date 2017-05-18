@@ -48,11 +48,11 @@ nodeDbGetCache plan9fromouterspace
 logExpect $? 2 can not query cache for unknown module
 
 logTest we can not drop a malformatted module
-nodeDbDelCache org/modulename
+nodeDbEvictCache org/modulename
 logExpect $? 2 can not drop malformatted module name
 
 logTest we can drop a module
-nodeDbDelCache express
+nodeDbEvictCache express
 logExpect $? 0 can drop module
 
 logTest dropped module no longer shows
