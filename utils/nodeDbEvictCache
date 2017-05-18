@@ -34,15 +34,15 @@ do
     elif grep "^$TARGET;" $DBDIR/npmjs-cache >/dev/null; then
 	if ! sed -i "/^$TARGET;.*$/d" $DBDIR/npmjs-cache; then
 	    if grep "^$TARGET;" $DBDIR/npmjs-cache >/dev/null; then
-		echo "<del$ WARNING: failed removing $TARGET from NPMJS cache"
+		echo "<del$ WARNING: failed evicting $TARGET from NPMJS cache"
 		if $QUICK; then
 		    exit 2
 		fi
 	    else
-		echo "<del$ NOTICE: removed $TARGET from NPMJS cache"
+		echo "<del$ NOTICE: evicted $TARGET from NPMJS cache"
 	    fi
 	else
-	    echo "<del$ NOTICE: removed $TARGET from NPMJS cache"
+	    echo "<del$ NOTICE: evicted $TARGET from NPMJS cache"
 	fi
 	if $QUICK; then
 	    exit 0
