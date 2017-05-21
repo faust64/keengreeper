@@ -44,7 +44,7 @@ do
 		    if grep -E "^$TARGET;$VERSION;[0-9]*;sane$" $DBDIR/snyk-cache >/dev/null; then
 			echo "<get$ NOTICE: $TARGET@$VERSION has no known vulnerability" >&2
 		    else
-			sed "s|^$TARGET;$VERSION;[^;]*;||" $DBDIR/snyk-cache
+			grep "^$TARGET;$VERSION;" $DBDIR/snyk-cache | sed "s|^$TARGET;$VERSION;[^;]*;||"
 		    fi
 		    if $QUICK; then
 			exit 0
