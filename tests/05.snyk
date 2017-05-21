@@ -55,6 +55,10 @@ logTest we do not find warnings for a module supposed to be healthy
 snykDbGetCache df 1.1.1 2>&1 | grep 'has no known vulnerability'
 logExpect $? 0 healthy module marked as such
 
+logTest we do not return anything else than the module requested
+snykDbGetCache df 1.1.1 2>&1 | grep azure-storage >/dev/null
+logExpect $? 1 querying a module do not return other modules
+
 logTest we get an error querying cache for an unknown module
 snykDbGetCache plan9fromouterspace 3.2.1
 logExpect $? 2 can not query cache for unknown module
