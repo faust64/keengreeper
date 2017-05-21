@@ -93,9 +93,10 @@ do
 			skipreason="failed getting last revision from npmjs.com"
 		    elif ! nodeDbAddCache $dependency >/dev/null 2>&1; then
 			skipreason="failed updating npmjs cache"
-		    elif grep "^$dependency$" $DBDIR/exclude-from-updates >/dev/null 2>&1; then
-			skipreason="dependency registered to exclude file"
 		    fi
+		fi
+		if grep "^$dependency$" $DBDIR/exclude-from-updates >/dev/null 2>&1; then
+		    skipreason="dependency registered to exclude file"
 		fi
 		if test "$skipreason"; then
 		    test "$DEBUG" && echo "skipping $repository::$dependency - $skipreason"
