@@ -33,8 +33,47 @@ elif ! nodeDbListCache >/dev/null 2>&1; then
 fi
 
 SNYK_THROTTLE=0
-nodeDbListCache | grep ', last known version' \
-    | sed 's|^\(.*\), last known version was \(.*\) as of .*$|\1 \2|' \
+for repository in `listRepository`
+do
+    if ! listDependencies $repository >/dev/null 2>&1; then
+	echo "skipping $repository - failed listing dependencies" >&2
+	continue
+    fi
+    echo "processing $repository dependencies" >&2
+    listDependencies $repository | while read dependency version
+	do
+	    skipreason=
+	    if echo $version | grep -E '(((http(s|)|ssh|file):)|/)' >/dev/null; then
+		skipreason="non-npm dependency"
+	    elif ! nodeDbGetCache $dependency >/dev/null 2>&1; then
+		if ! getVersionFromNpmjs $dependency >/dev/null 2>&1; then
+		    skipreason="failed getting last revision from npmjs.com"
+		elif ! nodeDbAddCache $dependency >/dev/null 2>&1; then
+		    skipreason="failed updating npmjs cache"
+		fi
+	    fi
+	    if test "$skipreason"; then
+		test "$DEBUG" && echo "skipping $repository::$dependency - $skipreason" >&2
+		continue
+	    elif test "$version" = latest; then
+		if resolveVersion $repository $dependency >/dev/null 2>/dev/null; then
+		    localVersion=`resolveVersion $repository $dependency`
+		else
+		    localVersion=`nodeDbGetCache $dependency 2>/dev/null`
+		fi
+	    elif echo "$version" | grep -E '[~xX^]' >/dev/null; then
+		if resolveVersion $repository $dependency >/dev/null 2>/dev/null; then
+		    localVersion=`resolveVersion $repository $dependency`
+		else
+		    localVersion=`echo $version | sed -e 's|^[~^]||' -e 's|[xX]|0|g'`
+		fi
+	    else
+		localVersion=$version
+	    fi
+	    test "$DEBUG" && echo "found $dependency $version -> $localVersion" >&2
+	    echo "$dependency $localVersion"
+	done
+done | sort -u \
     | while read package version
 	do
 	    if ! snykDbGetCache $package $version >/dev/null 2>&1; then
