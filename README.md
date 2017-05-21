@@ -123,8 +123,8 @@ Being sure our magic works, you may consider setting up some cron job:
 ```
 (
     crontab -l
-    echo "30 */6 * * * `pwd`/updateModules >>log/cron.log 2>&1"
-    echo "45 4 * * * `pwd`/updateVulnerabilities >>log/snyk-cron.log 2>&1"
+    echo "30 */2 * * * `pwd`/updateModules >>log/cron.log 2>&1"
+    echo "45 */6 * * * `pwd`/updateVulnerabilities >>log/snyk-cron.log 2>&1"
     echo "15 0 * * * `pwd`/expireCaches >>log/cache-cron.log 2>&1"
 ) | crontab -
 ```
