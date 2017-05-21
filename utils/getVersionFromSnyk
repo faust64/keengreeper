@@ -28,7 +28,7 @@ if test "$SNYK_THROTTLE"; then
 	esac
     fi
 fi
-if ! wget https://snyk.io/test/npm/$TARGET -q -O $TMPFILE; then
+if ! wget --no-cache https://snyk.io/test/npm/$TARGET -q -O $TMPFILE; then
     echo "CRITICAL: failed fetching $TARGET data from snyk.io" >&2
     exit 2
 elif ! test -s $TMPFILE; then
