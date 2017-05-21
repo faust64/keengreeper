@@ -86,15 +86,15 @@ do
 	    do
 		test "$DEBUG" && echo "checking $dependency on behalf of $repository"
 		skipreason=
-		if grep "^$dependency$" $DBDIR/exclude-from-updates >/dev/null 2>&1; then
-		    skipreason="dependency registered to exclude file"
-		elif echo $version | grep -E '(((http(s|)|ssh|file):)|/)' >/dev/null; then
+		if echo $version | grep -E '(((http(s|)|ssh|file):)|/)' >/dev/null; then
 		    skipreason="non-npm dependency"
 		elif ! nodeDbGetCache $dependency >/dev/null 2>&1; then
 		    if ! getVersionFromNpmjs $dependency >/dev/null 2>&1; then
 			skipreason="failed getting last revision from npmjs.com"
 		    elif ! nodeDbAddCache $dependency >/dev/null 2>&1; then
 			skipreason="failed updating npmjs cache"
+		    elif grep "^$dependency$" $DBDIR/exclude-from-updates >/dev/null 2>&1; then
+			skipreason="dependency registered to exclude file"
 		    fi
 		fi
 		if test "$skipreason"; then
