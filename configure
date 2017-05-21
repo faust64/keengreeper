@@ -56,22 +56,22 @@ do
 	    break
 	    ;;
 	a|add)
-	    nodeDbAddRepository "$args"
+	    nodeDbAddRepository $args
 	    ;;
 	c|cache)
-	    nodeDbAddCache "$args"
+	    nodeDbAddCache $args
 	    ;;
 	d|dr|del|delrepo|rem|rm)
-	    nodeDbDelRepository "$args"
+	    nodeDbDelRepository $args
 	    ;;
 	dc|delcache)
-	    nodeDbEvictCache "$args"
+	    nodeDbEvictCache $args
 	    ;;
 	dpc|dropcache)
 	    nodeDbDropCache
 	    ;;
 	di|delign|delignore|remi|remign|remignore|rmi|rmign|rmignore)
-	    nodeDbDelIgnore "$args"
+	    nodeDbDelIgnore $args
 	    ;;
 	dnc|delnpmcache)
 	    npmClearCache
@@ -86,16 +86,16 @@ do
 EOF
 	    ;;
 	i|ign|ignore)
-	    nodeDbAddIgnore "$args"
+	    nodeDbAddIgnore $args
 	    ;;
 	l|lr|ls|list|listrepo)
-	    nodeDbListRepository "$args"
+	    nodeDbListRepository $args
 	    ;;
 	lc|listcache)
-	    nodeDbListCache "$args"
+	    nodeDbListCache $args
 	    ;;
 	li|listign)
-	    nodeDbListIgnore "$args"
+	    nodeDbListIgnore $args
 	    ;;
 	nvm|nvminstall)
 	    if ! test -s "$HOME/.nvm/nvm.sh"; then
@@ -153,10 +153,10 @@ EOF
 	    fi
 	    ;;
 	sa|snykadd)
-	    snykDbAddCache "$args"
+	    snykDbAddCache $args
 	    ;;
 	sd|snykdel)
-	    snykDbEvictCache "$args"
+	    snykDbEvictCache $args
 	    ;;
 	sdr|snykdrop)
 	    snykDbDropCache
@@ -165,10 +165,10 @@ EOF
 	    snykDbExpireCache
 	    ;;
 	sg|snykget)
-	    snykDbGetCache "$args"
+	    snykDbGetCache $args
 	    ;;
 	sls|snykls)
-	    snykDbListCache "$args"
+	    snykDbListCache $args
 	    ;;
 	slv|snyklistvuln)
 	    snykDbListVulnerabilities
