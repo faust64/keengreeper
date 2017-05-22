@@ -10,6 +10,7 @@ alerts based on Snyk security advisories.
 ## Dependencies
 
  * bash (installing & running NVM)
+ * curl (querying NPMJS & Snyk, installing NVM, notifying slack)
  * git, runtime user should have username & email configured
  * ssh key pair, setting up passwordless access to your repositories
 
