@@ -101,7 +101,7 @@ do
 	    if ! snykDbGetCache $dependency $version >/dev/null 2>&1; then
 		echo "WARNING: snyk cache missing $dependency@$version" >&2
 		continue
-	    elif snykDbGetCache $dependency $version 2>/dev/null | grep 'has no known vulnerability' >/dev/null; then
+	    elif snykDbGetCache $dependency $version 2>&1 | grep 'has no known vulnerability' >/dev/null; then
 		continue
 	    else
 		echo "$dependency@$version known to be vulnerable:"
