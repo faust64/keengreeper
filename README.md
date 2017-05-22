@@ -3,8 +3,9 @@
 Keep git-hosted NodeJS projects up-to-date - shrinkwrap-capable.
 
 AKA: GreenKeeper replacement. Following on the forced migration to GreenKeeper2,
-and the late annouce that we would now be charged. Shame. Here is a rudimentary
-drop-in replacement, that actually handles shrinkwrap.
+and the late annouce that we would now be charged: here is a rudimentary drop-in
+replacement, that actually handles shrinkwrap, and may also be used raising
+alerts based on Snyk security advisories.
 
 ## Dependencies
 
@@ -35,16 +36,22 @@ cached NodeJS modules, looking for potential vulnerabilities.
 The `expireCaches` drops references to dependencies from your NodeJS modules &
 Snyk caches, when these are no longer relevant to your repositories.
 
+The `checkVulnerabilities` checks your dependencies against Snyk advisories,
+and eventually sends Slack and/or mail notifications.
+
 ## Setup
 
 We first need to set some variables. Look at `env.sample` for an example, you
 would have to define:
 
- * `WORKDIR`, the folder we would keep cloned repositories into
- * `TMPDIR`, the folder we will be preparing our new commits into
- * `LOGDIR`, the folder we would store npm install and shrinkwrap logs into
  * `DBDIR`, the folder we would keep our internal configurations & caches into
  * `CACHETTL`, the amount of seconds a record from npmjs.org should be kept
+ * `LOGDIR`, the folder we would store npm install and shrinkwrap logs into
+ * `MAIL_RCPT`, the recipients of mail alerts upon matching a vulnerable modules
+ * `SLACK_HOOK_URL`, upon matching vulnerable modules, send Slack notification
+ * `SNYKTTL`, the amount of seconds a record from Snyk should be kept
+ * `TMPDIR`, the folder we will be preparing our new commits into
+ * `WORKDIR`, the folder we would keep cloned repositories into
 
 Having set the proper values, make sure to install that file as
 `/etc/keengreeper.conf`, to have it loaded automatically - otherwise, make sure
@@ -125,6 +132,7 @@ Being sure our magic works, you may consider setting up some cron job:
     crontab -l
     echo "30 */2 * * * `pwd`/updateModules >>log/cron.log 2>&1"
     echo "45 */6 * * * `pwd`/updateVulnerabilities >>log/snyk-cron.log 2>&1"
-    echo "15 0 * * * `pwd`/expireCaches >>log/cache-cron.log 2>&1"
+    echo "15   0 * * * `pwd`/expireCaches >>log/cache-cron.log 2>&1"
+    echo " 0  22 * * * `pwd`/checkVulnerabilities >>log/vuln-cron.log 2>&1"
 ) | crontab -
 ```
