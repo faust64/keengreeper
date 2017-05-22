@@ -22,7 +22,7 @@ if test "$NPMJS_THROTTLE"; then
 	esac
     fi
 fi
-if ! wget --no-cache https://www.npmjs.com/package/$1 -q -O $TMPFILE; then
+if ! curl -H 'Cache-Control: no-cache' https://www.npmjs.com/package/$1 >$TMPFILE 2>/dev/null; then
     echo "CRITICAL: failed fetching $1 data from npmjs.com" >&2
     rm -f $TMPFILE
     exit 2
