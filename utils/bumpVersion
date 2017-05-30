@@ -20,7 +20,7 @@ elif test -f "$2" -a -z "$3"; then
 	if test `echo "$commitMsgStr" | wc -c` -gt 78; then
 	    commitMsg="chore(package): bump nodejs dependencies"
 	else
-	    commitMsg="chore(package): bump $commitMsgStr"
+	    commitMsg="chore(package): bump$commitMsgStr"
 	fi
 	DSTBRANCH=chaos$subject
     fi
