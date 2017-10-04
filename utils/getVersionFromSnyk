@@ -37,8 +37,20 @@ elif ! test -s $TMPFILE; then
     exit 2
 fi
 
+cp -p $TMPFILE /home/samuel/nodejs-update-job/toto
 if ! grep '<meta name="description" content="No vulnerabilities found. This is a good thing!">' $TMPFILE >/dev/null; then
-    parseRemediation $TMPFILE | sed -e 's|<[/]*p>||g' -e 's|<a href=[^>]*>||g' -e 's|</a>||g' -e 's|<[/]*code>||g' -e 's|<[/]*strong>||g' -e 's|&gt[; ]|>|g' -e 's|&lt[; ]|<|g' -e 's|^[ \t]*||' -e 's|\.$||'
+    TMPISSUE=$TMPFILE.issue
+    grep 'More about this issue' $TMPFILE | \
+	sed 's|^.* href="\([^"]*\)".*|\1|' | \
+	while read issue
+	    do
+		if curl -H 'Cache-Control: no-cache' "https://snyk.io/$issue" >$TMPISSUE 2>/dev/null; then
+		    parseRemediation $TMPISSUE | sed -e 's|<[/]*p>||g' -e 's|<a href=[^>]*>||g' -e 's|</a>||g' -e 's|<[/]*code>||g' -e 's|<[/]*strong>||g' -e 's|&gt[; ]|>|g' -e 's|&lt[; ]|<|g' -e 's|^[ \t]*||' -e 's|\.$||'
+		else
+		    echo see "https://snyk.io/$issue"
+		fi
+	    done
+    rm -f $TMPISSUE
 fi
 
 rm -f $TMPFILE
