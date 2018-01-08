@@ -1,0 +1,30 @@
+#!/bin/sh
+
+if test -z "$1"; then
+    echo "CRITICAL: missing repository argument" >&2
+    exit 1
+elif test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $WORKDIR/$1/.git; then
+    echo "CRITICAL: repository $1 does not exist in $WORKDIR" >&2
+    exit 1
+elif ! test -s $WORKDIR/$1/package.json; then
+    echo "CRITICAL: repository $1 has no package.json" >&2
+    exit 1
+fi
+
+cd $WORKDIR/$1
+
+if ! git branch -a 2>/dev/null | grep 'remotes/origin/chaos' >/dev/null; then
+    exit 2
+fi
+
+git branch -a 2>/dev/null | grep '^[ ]*remotes/origin/chaos-' | \
+    awk 'BEG { rslt = ""; } {
+	    if (length(rslt) < length($0)) {
+		rslt = $0;
+	    }
+	} END { print rslt; }'
+
+exit 0

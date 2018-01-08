@@ -1,0 +1,66 @@
+#!/bin/sh
+
+if test -z "$1"; then
+    echo "CRITICAL: missing repository argument" >&2
+    exit 1
+elif test -z "$2"; then
+    echo "CRITICAL: missing branch argument" >&2
+    exit 1
+elif test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $WORKDIR/$1/.git; then
+    echo "CRITICAL: repository $1 does not exist in $WORKDIR" >&2
+    exit 1
+elif ! test -s $WORKDIR/$1/package.json; then
+    echo "CRITICAL: repository $1 has no package.json" >&2
+    exit 1
+fi
+
+cd $WORKDIR/$1
+
+REPO=`git remote -v show -n origin | awk '/^[ ]*Push[ ]*URL:/{print $0}' | sed -e 's|.*github.com.\(.*\)|\1|' -e 's|\.git$||'`
+REVISION=`git rev-parse $2 2>/dev/null`
+VALID=false
+if test "$REPO"; then
+    if echo "$REPO" | grep 'Push[ ]*URL' >/dev/null; then
+	echo "CRITICAL: unsupported git provider" >&2
+    else
+	PROVIDER=github
+    fi
+else
+    echo "CRITICAL: failed extracting repository" >&2
+fi
+if test -z "$REVISION"; then
+    echo "CRITICAL: failed resolving commit hash for $1:$2"
+elif test "$PROVIDER"; then
+    if test -s $WORKDIR/$1/circle.yml; then
+	STATUS=
+	if test "$CIRCLE_TOKEN"; then
+	    if curl -u "$CIRCLE_TOKEN:" https://circleci.com/api/v1.1/me 2>/dev/null | grep 'You must log in first' >/dev/null; then
+		echo "CRITICAL: Invalid CircleCI Token" >&2
+	    else
+		STATUS=`curl -u "$CIRCLE_TOKEN:" https://circleci.com/api/v1.1/project/$PROVIDER/$REPO 2>/dev/null | parseCircleCI $REVISION`
+	    fi
+	else
+	    STATUS=`curl https://circleci.com/api/v1.1/project/$PROVIDER/$REPO 2>/dev/null | parseCircleCI $REVISION`
+	fi
+	if test -z "$STATUS"; then
+	    echo "WARNING: CircleCI has no record for $REPO:$REVISION" >&2
+	elif echo "$STATUS" | grep -E '(success|fixed)' >/dev/null; then
+	    test "$DEBUG" && echo "CircleCI confirms $REPO:$REVISION tests passed"
+	    VALID=true
+	else
+	    echo "WARNING: CircleCI tests failed" >&2
+	fi
+    fi
+    if test -s $WORKDIR/$1/.travis.yml; then
+	echo "CRITICAL: not implemented" >&2
+    fi
+fi
+
+if ! $VALID; then
+    exit 2
+fi
+
+exit 0

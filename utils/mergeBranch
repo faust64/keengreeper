@@ -1,0 +1,58 @@
+#!/bin/sh
+
+DRY=false
+if test -z "$1"; then
+    echo "CRITICAL: missing repository argument" >&2
+    exit 1
+elif test -z "$2"; then
+    echo "CRITICAL: missing branch argument" >&2
+    exit 1
+elif test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $WORKDIR/$1/.git; then
+    echo "CRITICAL: repository $1 does not exist in $WORKDIR" >&2
+    exit 1
+elif ! test -s $WORKDIR/$1/package.json; then
+    echo "CRITICAL: repository $1 has no package.json" >&2
+    exit 1
+fi
+
+cd $WORKDIR/$1
+
+ISBRANCH=`git branch | awk '{print $2}'`
+if test -z "$ISBRANCH"; then
+    echo "CRITICAL: failed resolving working branch for $1" >&2
+    exit 2
+elif ! git branch -a 2>/dev/null | grep "^[ ]*$2$" >/dev/null; then
+    echo "CRITICAL: cannot merge $2 into $1:$ISBRANCH, branch not found" >&2
+    exit 2
+fi
+if $DRY; then
+    echo should git merge "$2"
+elif ! git merge "$2"; then
+    echo "CRITICAL: failed merging $2 into $1:$ISBRANCH" >&2
+    exit 2
+fi
+
+git branch -a | grep '[ ]*remotes/origin/chaos-' | sed 's|.*remotes/origin/||' | while read DROPME
+    do
+	if $DRY; then
+	    echo "should drop $DROPME"
+	    continue
+	fi
+	if ! git push origin --delete "$DROPME"; then
+	    echo "WARNING: failed dropping $1:$DROPME from remote" >&2
+	elif test "$DEBUG"; then
+	    echo "NOTICE: successfully dropped $1:$DROPME from remote"
+	fi
+    done
+
+if $DRY; then
+    echo "should push $1:$ISBRANCH"
+elif ! git push -u origin "$ISBRANCH" >/dev/null 2>&1; then
+    echo "CRITICAL: failed pushing merged copy of $1" >&2
+    exit 2
+fi
+
+exit 0

@@ -10,7 +10,8 @@ alerts based on Snyk security advisories.
 ## Dependencies
 
  * bash (installing & running NVM)
- * curl (querying NPMJS & Snyk, installing NVM, notifying slack)
+ * curl (querying NPMJS & Snyk, installing NVM, querying CircleCI, notifying
+   slack)
  * git, runtime user should have username & email configured
  * ssh key pair, setting up passwordless access to your repositories
 
@@ -40,6 +41,10 @@ Snyk caches, when these are no longer relevant to your repositories.
 The `checkVulnerabilities` checks your dependencies against Snyk advisories,
 and eventually sends Slack and/or mail notifications.
 
+The `mergeBranches` checks for previously-pushed patch branches, queries
+CircleCI and may merge successfully-tested patches, eventually cleaning up
+previously-pushed branches.
+
 ## Setup
 
 We first need to set some variables. Look at `env.sample` for an example, you
@@ -47,6 +52,8 @@ would have to define:
 
  * `DBDIR`, the folder we would keep our internal configurations & caches into
  * `CACHETTL`, the amount of seconds a record from npmjs.org should be kept
+ * `CIRCLE_TOKEN`, optional token querying CircleCI for tests results, assuming
+   some of your repositories could be private
  * `LOGDIR`, the folder we would store npm install and shrinkwrap logs into
  * `MAIL_RCPT`, the recipients of mail alerts upon matching a vulnerable modules
  * `SLACK_HOOK_URL`, upon matching vulnerable modules, send Slack notification
@@ -135,5 +142,6 @@ Being sure our magic works, you may consider setting up some cron job:
     echo "45 */6 * * * `pwd`/updateVulnerabilities >>log/snyk-cron.log 2>&1"
     echo "15   0 * * * `pwd`/expireCaches >>log/cache-cron.log 2>&1"
     echo " 0  22 * * * `pwd`/checkVulnerabilities >>log/vuln-cron.log 2>&1"
+    echo "20 */2 * * * `pwd`/mergeBranches >>log/merge-cron.log 2>&1"
 ) | crontab -
 ```

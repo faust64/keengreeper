@@ -1,0 +1,21 @@
+#!/bin/sh
+
+if test -z "$1"; then
+    echo "CRITICAL: missing repository argument" >&2
+    exit 1
+elif test -z "$WORKDIR"; then
+    echo "CRITICAL: WORKDIR not set, can not proceed" >&2
+    exit 1
+elif ! test -d $WORKDIR/$1/.git; then
+    echo "CRITICAL: repository $1 does not exist in $WORKDIR" >&2
+    exit 1
+elif ! test -s $WORKDIR/$1/package.json; then
+    echo "CRITICAL: repository $1 has no package.json" >&2
+    exit 1
+fi
+
+if ! test -s $WORKDIR/$1/circle.yml -o -s $WORKDIR/$1/.travis.yml; then
+    exit 2
+fi
+
+exit 0
