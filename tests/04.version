@@ -55,4 +55,8 @@ logTest comparing versions works
 checkVersion 1.X 1.2.3
 logExpect $? 0 version are equals
 
+logTest comparing versions works
+checkVersion ^3.0.0-rc1 2.4.0
+logExpect $? 0 version is RC
+
 logDone
