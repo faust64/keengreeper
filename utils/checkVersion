@@ -29,17 +29,23 @@ MATCH=false
 if test "$localMaj" -gt "$refMaj"; then
     MATCH=true
 elif test "$localMaj" = "$refMaj"; then
-    if test "$localMin" != x -a "$refMin" != x; then
-	if test "$localMin" -ge "$refMin"; then
+    if test "$localMin" != x; then
+	if test "$localMin" -gt "$refMin"; then
 	    MATCH=true
 	fi
-    elif test "$localMin" = "$refMin" -o "$localMin" = x; then
-	if test "$localPatch" != x -a "$refPatch" != x; then
-	    if test "$localPatch" -ge "$refPatch"; then
-		MATCH=true
+    fi
+    if ! $MATCH; then
+	if test "$localMin" = "$refMin" -o "$localMin" = x; then
+	    if test "$localPatch" != x; then
+		if test "$localPatch" -gt "$refPatch"; then
+		    MATCH=true
+		fi
 	    fi
-	elif test "$localPatch" = "$refPatch" -o "$localPatch" = x; then
-	    MATCH=true
+	    if ! $MATCH; then
+		if test "$localPatch" = "$refPatch" -o "$localPatch" = x; then
+		    MATCH=true
+		fi
+	    fi
 	fi
     fi
 fi
