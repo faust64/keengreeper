@@ -33,6 +33,7 @@ elif test "$TARGET" = staging; then
 	echo "CRITICAL: Failed switching $1 to branch $TARGET" >&2
 	exit 2
     fi
+    echo "NOTICE: $1 has no staging branch, falling back to master"
 else
     echo "CRITICAL: branch $TARGET does not exist in $1" >&2
 fi
