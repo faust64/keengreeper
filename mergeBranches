@@ -1,7 +1,7 @@
 #!/bin/sh
 
 basePath=`dirname $0`
-export PATH="`pwd`/utils:$PATH"
+export PATH="$(cd "$basePath" 2>/dev/null && pwd)/utils:$PATH"
 
 if test -s /etc/keengreeper.conf; then
     . /etc/keengreeper.conf
