@@ -40,7 +40,7 @@ fi
 cp -p $TMPFILE /home/samuel/nodejs-update-job/toto
 if ! grep '<meta name="description" content="No vulnerabilities found. This is a good thing!">' $TMPFILE >/dev/null; then
     TMPISSUE=$TMPFILE.issue
-    grep -B7 'More about this issue' $TMPFILE | grep href= | \
+    grep -B12 'More about this issue' $TMPFILE | grep href= | \
 	sed 's|^.* href="\([^"]*\)".*|\1|' | \
 	while read issue
 	    do
